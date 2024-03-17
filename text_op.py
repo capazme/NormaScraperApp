@@ -28,7 +28,7 @@ def estrai_testo_articolo(atto_xml, num_articolo=1, est_articolo=None, comma=Non
             indice_estensione = estrai_numero_da_estensione(est_articolo)
             if indice_estensione >= len(articoli):
                 return "Estensione dell'articolo non trovata."
-            articolo = articoli[indice_estensione]
+            articolo = articoli[indice_estensione-1]
         else:
             articolo = articoli[0]
         
