@@ -1,9 +1,3 @@
-import datetime
-import re
-from bs4 import BeautifulSoup
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
 from selenium import webdriver
@@ -16,10 +10,6 @@ def fetch_act_data():
     act_number = act_number_entry.get()
     article = article_entry.get()
     extension = ''
-    if "-" in article: #se l'interprete non dovesse cogliere l'estensione come parametro aggiuntivo
-            parts = article.split("-")
-            article = parts[0]
-            extension = parts[1]
     extension = extension_entry.get()
     version = version_var.get()
     version_date = version_date_entry.get()
