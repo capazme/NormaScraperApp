@@ -111,7 +111,7 @@ def normalize_act_type(input_type):
     "cod. giust. cont.": "codice di giustizia contabile",
     "cts": "codice del Terzo settore",
     "cod. ter. sett.": "codice del Terzo settore",
-    "cpc": "codice della protezione civile",
+    "cdpc": "codice della protezione civile",
     "cod. prot. civ.": "codice della protezione civile",
     "cci": "codice della crisi d'impresa e dell'insolvenza",
     "cod. crisi imp.": "codice della crisi d'impresa e dell'insolvenza",
@@ -230,7 +230,7 @@ def get_urn_and_extract_data(driver, act_type, date, act_number=None, article=No
         annex = None
 
 
-    #print(urn)
+    print(urn)
     
     driver.get(urn)
     
