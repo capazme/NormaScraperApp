@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, scrolledtext
+from tkinter import messagebox, scrolledtext, Scrollbar
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from urn import get_urn_and_extract_data
@@ -28,7 +28,7 @@ def fetch_act_data():
         if data:
             # Aggiorna il widget di testo con i dati recuperati
             output_text.delete('1.0', tk.END)  # Pulisce il widget di testo prima di inserire nuovi dati
-            output_text.insert(tk.END, data)  # Inserisce i dati nel widget di testo
+            output_text.insert(tk.END, str(data))  # Inserisce i dati nel widget di testo
         else:
             messagebox.showerror("Errore", "Impossibile estrarre i dati.")
     except Exception as e:
@@ -85,7 +85,10 @@ fetch_button = tk.Button(root, text="Estrai dati", command=fetch_act_data)
 fetch_button.grid(row=8, column=0, columnspan=3)
 
 # Widget di testo per l'output
-output_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=130, height=110)
+output_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=130, height=30)
 output_text.grid(row=9, column=0, columnspan=3, pady=10)
+
+
+
 
 root.mainloop()

@@ -42,6 +42,9 @@ def normalize_act_type(input_type):
     """
     act_types  = {
     "decreto legge": "decreto.legge",
+    "decreto legislativo": "decreto.legislativo",
+    "d.lgs.":"decreto.legislativo",
+    "dlgs": "decreto.legislativo",
     "dl": "decreto.legge",
     "legge": "legge",
     "l": "legge",
@@ -222,12 +225,12 @@ def get_urn_and_extract_data(driver, act_type, date, act_number=None, article=No
     if ann_num:
         # Estrai il gruppo di interesse (i numeri, opzionalmente seguiti da !vig= o @originale)
         annex = ann_num.group(1)
-        print(annex)  # Stampa il risultato dell'estrazione
+        #print(annex)  # Stampa il risultato dell'estrazione
     else:
         annex = None
 
 
-    print(urn)
+    #print(urn)
     
     driver.get(urn)
     
@@ -252,7 +255,7 @@ def get_urn_and_extract_data(driver, act_type, date, act_number=None, article=No
             return None
     else:
        html = driver.page_source
-       print(html)
+       #print(html)
        html_out = estrai_testo_articolo(atto=html, num_articolo=article, comma=comma, tipo='html')
        
        return html_out
