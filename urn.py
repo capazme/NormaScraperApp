@@ -1,8 +1,8 @@
 import datetime
 import re
-from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -129,7 +129,32 @@ def normalize_act_type(input_type):
             return value
     raise ValueError("Tipo di atto non riconosciuto")
 
+def estrai_data_da_denominazione(denominazione):
+    # Pattern per cercare una data nel formato "21 Marzo 2022"
+    pattern = r"\b(\d{1,2})\s([Gg]ennaio|[Ff]ebbraio|[Mm]arzo|[Aa]prile|[Mm]aggio|[Gg]iugno|[Ll]uglio|[Aa]gosto|[Ss]ettembre|[Oo]ttobre|[Nn]ovembre|[Dd]icembre)\s(\d{4})\b"
+    
+    # Ricerca della data all'interno della stringa utilizzando il pattern
+    match = re.search(pattern, denominazione)
+    
+    # Se viene trovata una corrispondenza, estrai e ritorna la data
+    if match:
+        return match.group(0)  # Ritorna l'intera corrispondenza
+    
+    # Se non viene trovata alcuna corrispondenza, ritorna None o una stringa vuota
+    return None
 
+def complete_date(act_type, date, act_number):
+        driver = setup_driver()
+        driver.get("https://www.normattiva.it/")
+        search_box = driver.find_element(By.CLASS_NAME, "form-control.autocomplete.bg-transparent")  # Assicurati che il selettore sia corretto
+        search_criteria = f"{act_type} {act_number} {date}"  # Formatta i criteri di ricerca come preferisci
+        search_box.send_keys(search_criteria)
+        search_box.send_keys(Keys.ENTER)
+        elemento = driver.find_element(By.XPATH, '//*[@id="heading_1"]/p[1]/a')
+        elemento_text = elemento.text
+        data_completa = estrai_data_da_denominazione(elemento_text)
+        driver.quit()
+        return data_completa
 
 def generate_urn(act_type, date=None, act_number=None, article=None, extension=None, version=None, version_date=None):
     """
@@ -145,7 +170,7 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
     "codice civile": "/uri-res/N2Ls?urn:nir:stato:regio.decreto:1942-03-16;262:2",
     "preleggi": "/uri-res/N2Ls?urn:nir:stato:regio.decreto:1942-03-16;262:1",
     "disposizioni per l'attuazione del Codice civile e disposizioni transitorie": "/uri-res/N2Ls?urn:nir:stato:regio.decreto:1942-03-30;318:1",
-    "codice della navigazione": "/uri-res/N2Ls?urn:nir:stato:regio.decreto:1942-03-30;327",
+    "codice della navigazione": "/uri-res/N2Ls?urn:nir:stato:regio.decreto:1942-03-30;327:1",
     "approvazione del Regolamento per l'esecuzione del Codice della navigazione (Navigazione marittima)": "/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1952-02-15;328",
     "codice postale e delle telecomunicazioni": "/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1973-03-29;156",
     "codice di procedura penale": "/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1988-09-22;447",
@@ -185,6 +210,9 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
         urn = codici_urn[normalized_type]
     else:
         try:
+            if re.match(r"^\d{4}$", date):
+                full_date = complete_date(act_type=act_type, date=date, act_number=act_number) 
+                date = full_date
             formatted_date = parse_date(date)
         except ValueError as e:
             print(f"Errore nella formattazione dei parametri: {e}")
@@ -192,7 +220,7 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
         urn = f"{normalized_type}:{formatted_date};{act_number}"
             
     if article:
-        if "-" in article: #se l'interprete non dovesse cogliere l'estensione come parametro aggiuntivo
+        if "-" in article: 
             parts = article.split("-")
             article = parts[0]
             extension = parts[1]
@@ -215,70 +243,73 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
             
     return base_url + urn
 
-def get_urn_and_extract_data(act_type, date, act_number=None, article=None, extension=None, comma = None, version=None, version_date=None, timeout=10, save_xml_path = None):
-    """
-    Funzione principale per generare l'URN, visitare la pagina e, in base all'esigenza, esportare in XML o estrarre testo HTML.
-    """
-    urn = generate_urn(act_type, date, act_number, article, extension, version, version_date)
+def get_annex_from_urn(urn):
+    ann_num = re.search(r":(\d+)(!vig=|@originale)$", urn)
+    if ann_num:
+        return ann_num.group(1)
+    return None
+
+def export_xml(driver, urn, timeout, annex):
+    driver.get(urn)
+    export_button_selector = "#mySidebarRight > div > div:nth-child(2) > div > div > ul > li:nth-child(2) > a"
+    export_xml_selector = "generaXml"
+        
+    WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.CSS_SELECTOR, export_button_selector))).click()
+    driver.switch_to.window(driver.window_handles[-1])
+    WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.NAME, export_xml_selector))).click()
+    driver.switch_to.window(driver.window_handles[-1])
+    WebDriverWait(driver, timeout)
+    xml_data = driver.page_source
+    xml_out = estrai_testo_articolo(xml_data, annesso=annex)
+    return xml_out
+
+def save_xml(xml_data, save_xml_path):
+    with open(save_xml_path, 'w', encoding='utf-8') as file:
+        file.write(xml_data)
+    return f"XML salvato in: {save_xml_path}"
+
+def extract_html_article(urn, article, comma):
+    response = requests.get(urn)
+    if response.status_code == 200:
+        html_content = response.text
+        return estrai_testo_articolo(atto=html_content, num_articolo=article, comma=comma, tipo='html')
+    return None
+
+def setup_driver():
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920x1080")
+    driver = webdriver.Chrome(options=chrome_options)
+    return driver
+
+def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
     
+    
+    urn = generate_urn(act_type, date, act_number, article, extension, version, version_date)
     if urn is None:
         print("Errore nella generazione dell'URN.")
         return None
-    ann_num = re.search(r":(\d+)(!vig=|@originale)$", urn)
-    if ann_num:
-        # Estrai il gruppo di interesse (i numeri, opzionalmente seguiti da !vig= o @originale)
-        annex = ann_num.group(1)
-        #print(annex)  # Stampa il risultato dell'estrazione
-    else:
-        annex = None
 
-
+    annex = get_annex_from_urn(urn)
     print(urn)
-    
-    
-    if not article: #testo integrale esportato in xml
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Imposta la modalità headless
-        chrome_options.add_argument("--disable-gpu")  # Raccomandato per eseguire in modalità headless
-        chrome_options.add_argument("--window-size=1920x1080")  # Opzionale, imposta la risoluzione del browser
 
-        driver = webdriver.Chrome(options=chrome_options)
+    if not article:
+        driver = setup_driver()
         try:
-            driver.get(urn)
-            export_button_selector = "#mySidebarRight > div > div:nth-child(2) > div > div > ul > li:nth-child(2) > a"
-            export_xml_selector = "generaXml"
-                
-            WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.CSS_SELECTOR, export_button_selector))).click()
-            driver.switch_to.window(driver.window_handles[-1])
-            WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.NAME, export_xml_selector))).click()
-            driver.switch_to.window(driver.window_handles[-1])
-            WebDriverWait(driver, timeout)
-            xml_data = driver.page_source
-            driver.close()
-            #print(xml_data)
-            xml_out = estrai_testo_articolo(xml_data, annesso=annex)
-            #print(xml_out)
-            
-            if save_xml_path:  # Se è stato fornito un percorso di salvataggio, salva il file XML
-                with open(save_xml_path, 'w', encoding='utf-8') as file:
-                    file.write(xml_data)
-                return f"XML salvato in: {save_xml_path}"
-            
+            xml_out = export_xml(driver, urn, timeout, annex)
+            if save_xml_path:
+                return save_xml(xml_out, save_xml_path)
             return xml_out
         except Exception as e:
             print(f"Errore nell'esportazione XML: {e}")
             return None
         finally:
             driver.quit()
-    else: #testo dell'articolo estratto dall'html
+    else:
         try:
-            response = requests.get(urn)
-            if response.status_code == 200:
-                html_content = response.text
-                html_out = estrai_testo_articolo(atto=html_content, num_articolo=article, comma=comma, tipo='html')
+            html_out = extract_html_article(urn, article, comma)
             return html_out
         except Exception as e:
             print(f"Errore nell'esportazione HTML: {e}")
             return None
-       
-        

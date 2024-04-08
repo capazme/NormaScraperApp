@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+
 def nospazi(text):
     textlist = text.split()
     for t in textlist:

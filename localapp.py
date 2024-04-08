@@ -2,6 +2,17 @@ import tkinter as tk
 from tkinter import messagebox, scrolledtext, Scrollbar, filedialog
 from urn import get_urn_and_extract_data
 
+def clear_all_fields():
+    # Imposta il contenuto di ogni Entry a una stringa vuota o a un valore predefinito
+    act_type_entry.delete(0, tk.END)
+    date_entry.delete(0, tk.END)
+    act_number_entry.delete(0, tk.END)
+    article_entry.delete(0, tk.END)
+    extension_entry.delete(0, tk.END)
+    version_date_entry.delete(0, tk.END)
+    comma_entry.delete(0, tk.END)
+    # Assicurati di aggiungere qui il codice per resettare eventuali altri campi che potresti avere.
+
 def save_as_xml():
     save_path = filedialog.asksaveasfilename(defaultextension=".xml", filetypes=[("XML files", "*.xml")])
     if save_path:
@@ -31,7 +42,7 @@ def fetch_act_data(save_xml_path=None):
 
 # Inizializza la finestra principale
 root = tk.Tk()
-root.title("Estrattore dati Normattiva")
+root.title("NormaScraper v2")
 
 # Crea e organizza gli elementi dell'interfaccia
 tk.Label(root, text="Tipo atto:").grid(row=0, column=0)
@@ -79,6 +90,10 @@ fetch_button.grid(row=8, column=0, columnspan=3)
 
 save_xml_button = tk.Button(root, text="Salva come XML", command=save_as_xml)
 save_xml_button.grid(row=8, column=1, columnspan=3)
+
+clear_button = tk.Button(root, text="Cancella", command=clear_all_fields)
+clear_button.grid(row=8, column=2)  # Modifica il valore di row e column secondo le tue necessità
+
 
 # Widget di testo per l'output
 output_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=130, height=30)
