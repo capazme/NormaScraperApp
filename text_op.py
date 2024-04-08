@@ -71,16 +71,17 @@ def estrai_testo_articolo(atto, num_articolo=None, est_articolo=None, comma=None
         try:
             soup = BeautifulSoup(atto, 'html.parser')
             corpo = soup.find('div', class_='bodyTesto')
-            print(corpo.text)
+            #print(corpo.text)
             if not comma:
                 return corpo.text
             else:
                 parsedcorpo = corpo.find('div', class_='art-commi-div-akn')
                 commi = parsedcorpo.find_all('div', class_='art-comma-div-akn')
-                
                 for c in commi:
-                    if f'{comma}.'in c.find('span', class_='comma-num-akn').text.strip():
+                    if f'{comma}.'in c.find('span', class_='comma-num-akn').text:
                         return c.text.strip()
+                    
+                    
         except Exception as e:
             return f"Errore generico: {e}"
                     

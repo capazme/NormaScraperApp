@@ -1,40 +1,33 @@
 import tkinter as tk
-from tkinter import messagebox, scrolledtext, Scrollbar
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from tkinter import messagebox, scrolledtext, Scrollbar, filedialog
 from urn import get_urn_and_extract_data
 
-def fetch_act_data():
+def save_as_xml():
+    save_path = filedialog.asksaveasfilename(defaultextension=".xml", filetypes=[("XML files", "*.xml")])
+    if save_path:
+        # Chiamata alla funzione modificata con il nuovo parametro del percorso di salvataggio
+        fetch_act_data(save_xml_path=save_path)
+
+def fetch_act_data(save_xml_path=None):
     act_type = act_type_entry.get()
     date = date_entry.get()
     act_number = act_number_entry.get()
     article = article_entry.get()
-    extension = ''
     extension = extension_entry.get()
     version = version_var.get()
     version_date = version_date_entry.get()
     comma = comma_entry.get()
     
-    # Configura il WebDriver qui (es. Chrome, Firefox, etc.)
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Imposta la modalità headless
-    chrome_options.add_argument("--disable-gpu")  # Raccomandato per eseguire in modalità headless
-    chrome_options.add_argument("--window-size=1920x1080")  # Opzionale, imposta la risoluzione del browser
-
-    driver = webdriver.Chrome(options=chrome_options)
-
     try:
-        data = get_urn_and_extract_data(driver, act_type, date, act_number, article, extension, comma, version, version_date)
+        data = get_urn_and_extract_data(act_type, date, act_number, article, extension, comma, version, version_date, save_xml_path=save_xml_path)
         if data:
             # Aggiorna il widget di testo con i dati recuperati
             output_text.delete('1.0', tk.END)  # Pulisce il widget di testo prima di inserire nuovi dati
             output_text.insert(tk.END, str(data))  # Inserisce i dati nel widget di testo
-        else:
-            messagebox.showerror("Errore", "Impossibile estrarre i dati.")
+            pass
     except Exception as e:
         messagebox.showerror("Errore", f"Si è verificato un errore: {e}")
-    finally:
-        driver.quit()
+    
 
 # Inizializza la finestra principale
 root = tk.Tk()
@@ -84,9 +77,13 @@ version_date_entry.grid(row=7, column=1)
 fetch_button = tk.Button(root, text="Estrai dati", command=fetch_act_data)
 fetch_button.grid(row=8, column=0, columnspan=3)
 
+save_xml_button = tk.Button(root, text="Salva come XML", command=save_as_xml)
+save_xml_button.grid(row=8, column=1, columnspan=3)
+
 # Widget di testo per l'output
 output_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=130, height=30)
 output_text.grid(row=9, column=0, columnspan=3, pady=10)
+
 
 
 

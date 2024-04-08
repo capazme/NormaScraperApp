@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import requests
 from text_op import estrai_testo_articolo
 
 def parse_date(input_date):
@@ -166,7 +169,7 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
     "regolamento di esecuzione ed attuazione del Codice dei contratti pubblici": "/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:2010-10-05;207",
     "codice delle pari opportunità": "/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2006-04-11;198",
     "codice dell'ordinamento militare": "/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2010-03-15;66",
-    "codice del processo amministrativo": "/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2010-07-02;104",
+    "codice del processo amministrativo": "/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2010-07-02;104:2",
     "codice del turismo": "/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2011-05-23;79",
     "codice antimafia": "/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2011-09-06;159",
     "codice di giustizia contabile": "/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2016-08-26;174",
@@ -212,7 +215,7 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
             
     return base_url + urn
 
-def get_urn_and_extract_data(driver, act_type, date, act_number=None, article=None, extension=None, comma = None, version=None, version_date=None, timeout=10):
+def get_urn_and_extract_data(act_type, date, act_number=None, article=None, extension=None, comma = None, version=None, version_date=None, timeout=10, save_xml_path = None):
     """
     Funzione principale per generare l'URN, visitare la pagina e, in base all'esigenza, esportare in XML o estrarre testo HTML.
     """
@@ -232,10 +235,16 @@ def get_urn_and_extract_data(driver, act_type, date, act_number=None, article=No
 
     print(urn)
     
-    driver.get(urn)
     
-    if not article: #testo integrale
+    if not article: #testo integrale esportato in xml
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")  # Imposta la modalità headless
+        chrome_options.add_argument("--disable-gpu")  # Raccomandato per eseguire in modalità headless
+        chrome_options.add_argument("--window-size=1920x1080")  # Opzionale, imposta la risoluzione del browser
+
+        driver = webdriver.Chrome(options=chrome_options)
         try:
+            driver.get(urn)
             export_button_selector = "#mySidebarRight > div > div:nth-child(2) > div > div > ul > li:nth-child(2) > a"
             export_xml_selector = "generaXml"
                 
@@ -249,13 +258,27 @@ def get_urn_and_extract_data(driver, act_type, date, act_number=None, article=No
             #print(xml_data)
             xml_out = estrai_testo_articolo(xml_data, annesso=annex)
             #print(xml_out)
+            
+            if save_xml_path:  # Se è stato fornito un percorso di salvataggio, salva il file XML
+                with open(save_xml_path, 'w', encoding='utf-8') as file:
+                    file.write(xml_data)
+                return f"XML salvato in: {save_xml_path}"
+            
             return xml_out
         except Exception as e:
             print(f"Errore nell'esportazione XML: {e}")
             return None
-    else:
-       html = driver.page_source
-       #print(html)
-       html_out = estrai_testo_articolo(atto=html, num_articolo=article, comma=comma, tipo='html')
+        finally:
+            driver.quit()
+    else: #testo dell'articolo estratto dall'html
+        try:
+            response = requests.get(urn)
+            if response.status_code == 200:
+                html_content = response.text
+                html_out = estrai_testo_articolo(atto=html_content, num_articolo=article, comma=comma, tipo='html')
+            return html_out
+        except Exception as e:
+            print(f"Errore nell'esportazione HTML: {e}")
+            return None
        
-       return html_out
+        
