@@ -104,13 +104,13 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
 
         # Buttons
         fetch_button = ttk.Button(self.mainframe, text="Estrai dati", command=self.fetch_act_data)
-        fetch_button.grid(row=8, column=0, columnspan=3)
+        fetch_button.grid(row=8, column=0)
         save_xml_button = ttk.Button(self.mainframe, text="Salva come XML", command=self.save_as_xml)
-        save_xml_button.grid(row=8, column=1, columnspan=3)
+        save_xml_button.grid(row=8, column=1)
         clear_button = ttk.Button(self.mainframe, text="Cancella", command=lambda: self.clear_all_fields([self.act_type_entry, self.date_entry, self.act_number_entry, self.article_entry, self.extension_entry, self.comma_entry, self.version_date_entry]))
         clear_button.grid(row=8, column=2)
         copia_button = ttk.Button(self.mainframe, text="Copia Testo", command=self.copia_output)
-        copia_button.grid(row=9, column=0)
+        copia_button.grid(row=8, column=3)
 
         self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD, width=130, height=30)
         self.output_text.grid(row=10, column=0, columnspan=3, pady=10)
