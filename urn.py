@@ -210,12 +210,12 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
         urn = codici_urn[normalized_type]
     else:
         try:
-            if re.match(r"^\d{4}$", date):
+            if re.match(r"^\d{4}$", date) and act_number:
                 full_date = complete_date(act_type=act_type, date=date, act_number=act_number) 
                 date = full_date
             formatted_date = parse_date(date)
         except ValueError as e:
-            print(f"Errore nella formattazione dei parametri: {e}")
+            print(f"Errore nella formattazione della data: {e}")
             return None
         urn = f"{normalized_type}:{formatted_date};{act_number}"
             
@@ -260,8 +260,7 @@ def export_xml(driver, urn, timeout, annex):
     driver.switch_to.window(driver.window_handles[-1])
     WebDriverWait(driver, timeout)
     xml_data = driver.page_source
-    xml_out = estrai_testo_articolo(xml_data, annesso=annex)
-    return xml_out
+    return xml_data
 
 def save_xml(xml_data, save_xml_path):
     with open(save_xml_path, 'w', encoding='utf-8') as file:
@@ -296,9 +295,10 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
     if not article:
         driver = setup_driver()
         try:
-            xml_out = export_xml(driver, urn, timeout, annex)
+            xml_data = export_xml(driver, urn, timeout, annex)
             if save_xml_path:
-                return save_xml(xml_out, save_xml_path)
+                save_xml(xml_data, save_xml_path)
+            xml_out = estrai_testo_articolo(xml_data, annesso=annex)
             return xml_out, urn
         except Exception as e:
             print(f"Errore nell'esportazione XML: {e}")
