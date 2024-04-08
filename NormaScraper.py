@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, filedialog
+from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu
 import webbrowser
 import pyperclip
 from urn import get_urn_and_extract_data
@@ -36,19 +36,22 @@ class NormaScraperApp:
         self.create_widgets()
 
     def setup_style(self):
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure('TButton', font=('Helvetica', 10))
-        style.configure('TEntry', padding=5)
-        style.configure('TLabel', font=('Helvetica', 10))
-        style.configure('TRadiobutton', font=('Helvetica', 10))
-        style.configure('Tooltip.TLabel', background='lightyellow', font=('Helvetica', 8))
+        self.style = ttk.Style()
+        self.style.theme_use('alt')  # A theme better suited for accessibility
+        self.style.configure('TButton', font=('Helvetica', 12), foreground='black', background='white')
+        self.style.configure('TEntry', padding=5, font=('Helvetica', 12))
+        self.style.configure('TLabel', font=('Helvetica', 12))
+        # Accessibility: High contrast theme configurations
+        self.style.configure('HighContrast.TButton', font=('Helvetica', 12), foreground='yellow', background='black')
 
     def create_widgets(self):
-        self.mainframe = ttk.Frame(self.root, padding="5")
+        self.mainframe = ttk.Frame(self.root, padding="3 3 12 12")
         self.mainframe.grid(column=0, row=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        self.mainframe.columnconfigure(0, weight=1)
-        self.mainframe.rowconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)  
+        self.root.grid_rowconfigure(0, weight=1)  
+        self.mainframe.columnconfigure(0, weight=1)  
+        self.mainframe.rowconfigure(10, weight=1)  
+
 
         # Input fields
         self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Inserisci il tipo di atto", 0, 0)
@@ -59,21 +62,23 @@ class NormaScraperApp:
         self.comma_entry = self.create_labeled_entry("Comma:", "Inserisci il tipo di atto", 5, 0)
 
         # Version radio buttons
-        tk.Label(self.mainframe, text="Versione:").grid(row=6, column=0)
+        ttk.Label(self.mainframe, text="Versione:").grid(row=6, column=0, sticky=tk.W)
         self.version_var = tk.StringVar(value="vigente")
-        tk.Radiobutton(self.mainframe, text="Originale", variable=self.version_var, value="originale").grid(row=6, column=1)
-        tk.Radiobutton(self.mainframe, text="Vigente", variable=self.version_var, value="vigente").grid(row=6, column=2)
+        ttk.Radiobutton(self.mainframe, text="Originale", variable=self.version_var, value="originale").grid(row=6, column=1, sticky=tk.W)
+        ttk.Radiobutton(self.mainframe, text="Vigente", variable=self.version_var, value="vigente").grid(row=6, column=2, sticky=tk.W)
+
+
 
         self.version_date_entry = self.create_labeled_entry("Data versione atto (se applicabile):", "Inserisci la data di versione dell'atto se disponibile", 7, 0)
 
         # Buttons
-        fetch_button = tk.Button(self.mainframe, text="Estrai dati", command=self.fetch_act_data)
+        fetch_button = ttk.Button(self.mainframe, text="Estrai dati", command=self.fetch_act_data)
         fetch_button.grid(row=8, column=0, columnspan=3)
-        save_xml_button = tk.Button(self.mainframe, text="Salva come XML", command=self.save_as_xml)
+        save_xml_button = ttk.Button(self.mainframe, text="Salva come XML", command=self.save_as_xml)
         save_xml_button.grid(row=8, column=1, columnspan=3)
-        clear_button = tk.Button(self.mainframe, text="Cancella", command=lambda: self.clear_all_fields([self.act_type_entry, self.date_entry, self.act_number_entry, self.article_entry, self.extension_entry, self.comma_entry, self.version_date_entry]))
+        clear_button = ttk.Button(self.mainframe, text="Cancella", command=lambda: self.clear_all_fields([self.act_type_entry, self.date_entry, self.act_number_entry, self.article_entry, self.extension_entry, self.comma_entry, self.version_date_entry]))
         clear_button.grid(row=8, column=2)
-        copia_button = tk.Button(self.mainframe, text="Copia Testo", command=self.copia_output)
+        copia_button = ttk.Button(self.mainframe, text="Copia Testo", command=self.copia_output)
         copia_button.grid(row=9, column=0)
 
         self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD, width=130, height=30)
@@ -83,7 +88,12 @@ class NormaScraperApp:
         ttk.Label(self.mainframe, text=label_text).grid(row=row, column=col, sticky=tk.W)
         entry = ttk.Entry(self.mainframe)
         entry.grid(row=row, column=col+1, sticky=(tk.W, tk.E), padx=2, pady=2)
-        Tooltip(entry, tooltip_text)
+        
+        # Icona tooltip
+        tooltip_icon = ttk.Label(self.mainframe, text="?", font=('Helvetica', 10, 'bold'), background='lightgray', relief='raised')
+        tooltip_icon.grid(row=row, column=col+2, sticky=tk.W, padx=(2, 0))
+        Tooltip(tooltip_icon, tooltip_text)  # Associa il tooltip all'icona
+        
         return entry
 
     def copia_output(self):
@@ -130,6 +140,35 @@ class NormaScraperApp:
         link = tk.Label(self.mainframe, text=text, fg="blue", cursor="hand2")
         link.bind("<Button-1>", lambda e: self.apri_url(url))
         link.grid(row=row, column=column)
+        
+    def create_menu(self):
+        self.menu_bar = Menu(self.root)
+        self.root.config(menu=self.menu_bar)
+
+        # File menu
+        self.file_menu = Menu(self.menu_bar, tearoff=0)
+        self.file_menu.add_command(label="Exit", command=self.on_exit)
+        self.menu_bar.add_cascade(label="File", menu=self.file_menu)
+
+        # Accessibility menu
+        self.accessibility_menu = Menu(self.menu_bar, tearoff=0)
+        self.accessibility_menu.add_command(label="Increase Text Size", command=self.increase_text_size)
+        self.accessibility_menu.add_command(label="High Contrast", command=self.apply_high_contrast_theme)
+        self.menu_bar.add_cascade(label="Accessibility", menu=self.accessibility_menu)
+
+    def on_exit(self):
+        """Handle the exit command from the menu."""
+        self.root.quit()
+
+    def increase_text_size(self):
+        """Increase text size of the widgets."""
+        # Example: Increase font size for buttons
+        self.style.configure('TButton', font=('Helvetica', 14))
+
+    def apply_high_contrast_theme(self):
+        """Apply high contrast theme for better visibility."""
+        self.style.configure('TButton', background='black', foreground='white')
+        # Apply high contrast configurations to other widgets as needed
 
 if __name__ == "__main__":
     root = tk.Tk()
