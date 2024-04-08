@@ -8,6 +8,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import requests
 from text_op import estrai_testo_articolo
+from functools import lru_cache
 
 def parse_date(input_date):
     """
@@ -282,6 +283,7 @@ def setup_driver():
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
+@lru_cache(maxsize=100)
 def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
     
     urn = generate_urn(act_type, date, act_number, article, extension, version, version_date)

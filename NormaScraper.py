@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu
 import webbrowser
 import pyperclip
 from urn import get_urn_and_extract_data
+
 class Tooltip:
     def __init__(self, widget, text):
         self.widget = widget
@@ -33,6 +34,11 @@ class NormaScraperApp:
         self.root = root
         self.root.title("NormaScraper - Beta")
         self.setup_style()
+        self.create_menu()
+        self.root.bind('<Control-i>', lambda event: self.increase_text_size())
+        self.root.bind('<Control-d>', lambda event: self.decrease_text_size())
+        self.root.bind('<Control-h>', lambda event: self.apply_high_contrast_theme())
+        self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
         self.create_widgets()
 
     def setup_style(self):
@@ -186,6 +192,18 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
         self.accessibility_menu.add_command(label="Increase Text Size", command=self.increase_text_size)
         self.accessibility_menu.add_command(label="High Contrast", command=self.apply_high_contrast_theme)
         self.menu_bar.add_cascade(label="Accessibility", menu=self.accessibility_menu)
+        self.accessibility_menu.add_command(label="Decrease Text Size", command=self.decrease_text_size)
+        self.accessibility_menu.add_command(label="Normal Theme", command=self.apply_normal_theme)
+        
+    def decrease_text_size(self):
+        """Decrease text size of the widgets."""
+        self.style.configure('TButton', font=('Helvetica', 10))
+        self.style.configure('TLabel', font=('Helvetica', 10))
+
+
+    def apply_normal_theme(self):
+        """Apply normal theme for default visibility."""
+        self.style.configure('TButton', background='SystemButtonFace', foreground='SystemButtonText')
 
     def on_exit(self):
         """Handle the exit command from the menu."""
@@ -195,6 +213,7 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
         """Increase text size of the widgets."""
         # Example: Increase font size for buttons
         self.style.configure('TButton', font=('Helvetica', 14))
+        self.style.configure('TLabel', font=('Helvetica', 14))
 
     def apply_high_contrast_theme(self):
         """Apply high contrast theme for better visibility."""
