@@ -1,6 +1,16 @@
 import tkinter as tk
+import webbrowser
 from tkinter import messagebox, scrolledtext, Scrollbar, filedialog
 from urn import get_urn_and_extract_data
+
+def apri_url(url):
+    webbrowser.open(url, new=2)
+    
+def crea_link(ui, text, url, row, column):
+    link = tk.Label(ui, text=text, fg="blue", cursor="hand2")
+    link.bind("<Button-1>", lambda e: apri_url(url))
+    link.grid(row=row, column=column)  # Usa grid con parametri row e column
+    return link
 
 def clear_all_fields():
     # Imposta il contenuto di ogni Entry a una stringa vuota o a un valore predefinito
@@ -34,7 +44,8 @@ def fetch_act_data(save_xml_path=None):
         if data:
             # Aggiorna il widget di testo con i dati recuperati
             output_text.delete('1.0', tk.END)  # Pulisce il widget di testo prima di inserire nuovi dati
-            output_text.insert(tk.END, str(data))  # Inserisce i dati nel widget di testo
+            output_text.insert(tk.END, str(data[0]))  # Inserisce i dati nel widget di testo
+            crea_link(root, "Apri URN Normattiva", data[1], 9, 0)
             pass
     except Exception as e:
         messagebox.showerror("Errore", f"Si è verificato un errore: {e}")
@@ -97,7 +108,7 @@ clear_button.grid(row=8, column=2)  # Modifica il valore di row e column secondo
 
 # Widget di testo per l'output
 output_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=130, height=30)
-output_text.grid(row=9, column=0, columnspan=3, pady=10)
+output_text.grid(row=10, column=0, columnspan=3, pady=10)
 
 
 

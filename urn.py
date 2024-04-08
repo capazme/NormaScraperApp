@@ -300,7 +300,7 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
             xml_out = export_xml(driver, urn, timeout, annex)
             if save_xml_path:
                 return save_xml(xml_out, save_xml_path)
-            return xml_out
+            return xml_out, urn
         except Exception as e:
             print(f"Errore nell'esportazione XML: {e}")
             return None
@@ -309,7 +309,7 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
     else:
         try:
             html_out = extract_html_article(urn, article, comma)
-            return html_out
+            return html_out, urn
         except Exception as e:
             print(f"Errore nell'esportazione HTML: {e}")
             return None
