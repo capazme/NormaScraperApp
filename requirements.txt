@@ -1,0 +1,17 @@
+beautifulsoup4==4.12.3
+bs4==0.0.2
+chromedriver==2.24.1
+ChromePy==0.0.5
+chromium==0.0.0
+connexion==3.0.6
+Flask==3.0.0
+Flask-Login==0.6.3
+Flask-Migrate==4.0.5
+Flask-SQLAlchemy==3.1.1
+regex==2023.12.25
+selenium==4.18.1
+tk==0.1.0
+uvicorn==0.28.0
+webdriver-manager==4.0.1
+websockets==12.0
+pyperclip

@@ -2,6 +2,16 @@ import tkinter as tk
 import webbrowser
 from tkinter import messagebox, scrolledtext, Scrollbar, filedialog
 from urn import get_urn_and_extract_data
+import pyperclip
+
+def copia_output():
+    try:
+        testo_da_copiare = output_text.get("1.0", tk.END)  # Estrae il testo dall'area di output
+        pyperclip.copy(testo_da_copiare)  # Copia il testo nel clipboard del sistema
+        messagebox.showinfo("Copia", "Testo copiato negli appunti!")  # Opzionale: mostra un messaggio di conferma
+    except Exception as e:
+        messagebox.showerror("Errore", "Impossibile copiare il testo: {}".format(e))
+
 
 def apri_url(url):
     webbrowser.open(url, new=2)
@@ -24,7 +34,7 @@ def clear_all_fields():
     # Assicurati di aggiungere qui il codice per resettare eventuali altri campi che potresti avere.
 
 def save_as_xml():
-    save_path = filedialog.asksaveasfilename(defaultextension=".xml", filetypes=[("XML files", "*.xml")])
+    save_path = filedialog.asksaveasfilename(initialdir="/Users/guglielmo/Desktop/CODE/Normattiva-scraper/NormaScraperApp/atti_scaricati", defaultextension=".xml", filetypes=[("XML files", "*.xml")])
     if save_path:
         # Chiamata alla funzione modificata con il nuovo parametro del percorso di salvataggio
         fetch_act_data(save_xml_path=save_path)
@@ -45,7 +55,7 @@ def fetch_act_data(save_xml_path=None):
             # Aggiorna il widget di testo con i dati recuperati
             output_text.delete('1.0', tk.END)  # Pulisce il widget di testo prima di inserire nuovi dati
             output_text.insert(tk.END, str(data[0]))  # Inserisce i dati nel widget di testo
-            crea_link(root, "Apri URN Normattiva", data[1], 9, 0)
+            crea_link(root, "Apri URN Normattiva", data[1], 9, 1)
             pass
     except Exception as e:
         messagebox.showerror("Errore", f"Si è verificato un errore: {e}")
@@ -105,6 +115,8 @@ save_xml_button.grid(row=8, column=1, columnspan=3)
 clear_button = tk.Button(root, text="Cancella", command=clear_all_fields)
 clear_button.grid(row=8, column=2)  # Modifica il valore di row e column secondo le tue necessità
 
+copia_button = tk.Button(root, text="Copia Testo", command=copia_output)
+copia_button.grid(row=9, column=0)  # Aggiusta i valori di 'row' e 'column' a seconda del layout della tua UI
 
 # Widget di testo per l'output
 output_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=130, height=30)
