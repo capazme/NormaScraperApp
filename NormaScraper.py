@@ -2,6 +2,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu
 import webbrowser
 import pyperclip
+import asyncio
+import threading
+import time
 from urn import get_urn_and_extract_data
 
 class Tooltip:
@@ -28,7 +31,7 @@ class Tooltip:
         if self.tooltip_window:
             self.tooltip_window.destroy()
             self.tooltip_window = None
-            
+
 class NormaScraperApp:
     def __init__(self, root):
         self.root = root
@@ -41,14 +44,22 @@ class NormaScraperApp:
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
         self.create_widgets()
 
+#
+#  STYLE
+#
+
     def setup_style(self):
         self.style = ttk.Style()
         self.style.theme_use('alt')  # A theme better suited for accessibility
-        self.style.configure('TButton', font=('Helvetica', 12), foreground='black', background='white')
-        self.style.configure('TEntry', padding=5, font=('Helvetica', 12))
-        self.style.configure('TLabel', font=('Helvetica', 12))
+        self.style.configure('TButton', font=('Helvetica', 15), foreground='black', background='white')
+        self.style.configure('TEntry', padding=5, font=('Helvetica', 15))
+        self.style.configure('TLabel', font=('Helvetica', 15))
         # Accessibility: High contrast theme configurations
-        self.style.configure('HighContrast.TButton', font=('Helvetica', 12), foreground='yellow', background='black')
+        self.style.configure('HighContrast.TButton', font=('Helvetica', 15), foreground='yellow', background='black')
+
+#
+#  INPUT
+#
 
     def create_widgets(self):
         self.mainframe = ttk.Frame(self.root, padding="3 3 12 12")
@@ -60,6 +71,7 @@ class NormaScraperApp:
 
 
         # Input fields
+        
         self.act_type_entry = self.create_labeled_entry("Tipo atto:", """
 Inserisci il tipo di atto generico (legge, decreto-legge, decreto legislativo) o un atto specifico tra quelli elencati (o una sua abbraviazione): 
 Costituzione (costituzione, cost, cost., c.)
@@ -121,6 +133,10 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
         self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD, width=130, height=30)
         self.output_text.grid(row=10, column=0, columnspan=3, pady=10)
 
+#
+#  FUNCIONS
+#
+
     def create_labeled_entry(self, label_text, tooltip_text, row, col):
         ttk.Label(self.mainframe, text=label_text).grid(row=row, column=col, sticky=tk.W)
         entry = ttk.Entry(self.mainframe)
@@ -154,7 +170,9 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
         )
         if file_path:
             self.fetch_act_data(save_xml_path=file_path)
-
+#
+# OUTPUT
+#
     def fetch_act_data(self, save_xml_path=None):
         act_type = self.act_type_entry.get()
         date = self.date_entry.get()
@@ -178,16 +196,25 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
         link.bind("<Button-1>", lambda e: self.apri_url(url))
         link.grid(row=row, column=column)
         
+#
+# MENU
+#
+
     def create_menu(self):
         self.menu_bar = Menu(self.root)
         self.root.config(menu=self.menu_bar)
 
+        #
         # File menu
+        #
         self.file_menu = Menu(self.menu_bar, tearoff=0)
         self.file_menu.add_command(label="Exit", command=self.on_exit)
         self.menu_bar.add_cascade(label="File", menu=self.file_menu)
-
+        
+        #
         # Accessibility menu
+        #
+        
         self.accessibility_menu = Menu(self.menu_bar, tearoff=0)
         self.accessibility_menu.add_command(label="Increase Text Size", command=self.increase_text_size)
         self.accessibility_menu.add_command(label="High Contrast", command=self.apply_high_contrast_theme)
@@ -199,7 +226,6 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
         """Decrease text size of the widgets."""
         self.style.configure('TButton', font=('Helvetica', 10))
         self.style.configure('TLabel', font=('Helvetica', 10))
-
 
     def apply_normal_theme(self):
         """Apply normal theme for default visibility."""
@@ -219,8 +245,12 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
         """Apply high contrast theme for better visibility."""
         self.style.configure('TButton', background='black', foreground='white')
         # Apply high contrast configurations to other widgets as needed
-
+    
 if __name__ == "__main__":
     root = tk.Tk()
     app = NormaScraperApp(root)
+    #codes_to_preload = ["costituzione", "codice civile", "codice penale"]
+    #app.start_async_preloading(codes_to_preload)
     root.mainloop()
+   
+

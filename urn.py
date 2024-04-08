@@ -38,8 +38,6 @@ def parse_date(input_date):
     except ValueError:
         raise ValueError("Formato data non valido")
 
-
-
 def normalize_act_type(input_type):
     """
     Normalizes the type of legislative act based on a variable input.
@@ -205,20 +203,20 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
 }
     base_url = "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:"
     
-    normalized_type = normalize_act_type(act_type)
+    normalized_act_type = normalize_act_type(act_type)
     
-    if normalized_type in codici_urn:
-        urn = codici_urn[normalized_type]
+    if act_type in codici_urn:
+        urn = codici_urn[act_type]
     else:
         try:
-            if re.match(r"^\d{4}$", date) and act_number:
-                full_date = complete_date(act_type=act_type, date=date, act_number=act_number) 
+            if re.match(r"^\d{4}$", date) and act_number and isinstance(date, str):
+                full_date = complete_date(act_type=normalized_act_type, date=date, act_number=act_number) 
                 date = full_date
             formatted_date = parse_date(date)
         except ValueError as e:
             print(f"Errore nella formattazione della data: {e}")
             return None
-        urn = f"{normalized_type}:{formatted_date};{act_number}"
+        urn = f"{normalized_act_type}:{formatted_date};{act_number}"
             
     if article:
         if "-" in article: 
@@ -250,6 +248,7 @@ def get_annex_from_urn(urn):
         return ann_num.group(1)
     return None
 
+@lru_cache(maxsize=100)
 def export_xml(driver, urn, timeout, annex):
     driver.get(urn)
     export_button_selector = "#mySidebarRight > div > div:nth-child(2) > div > div > ul > li:nth-child(2) > a"
@@ -268,6 +267,7 @@ def save_xml(xml_data, save_xml_path):
         file.write(xml_data)
     return f"XML salvato in: {save_xml_path}"
 
+@lru_cache(maxsize=100)
 def extract_html_article(urn, article, comma):
     response = requests.get(urn)
     if response.status_code == 200:
@@ -275,6 +275,7 @@ def extract_html_article(urn, article, comma):
         return estrai_testo_articolo(atto=html_content, num_articolo=article, comma=comma, tipo='html')
     return None
 
+@lru_cache(maxsize=50)
 def setup_driver():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
@@ -286,7 +287,9 @@ def setup_driver():
 @lru_cache(maxsize=100)
 def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
     
-    urn = generate_urn(act_type, date, act_number, article, extension, version, version_date)
+    normalized_act_type = normalize_act_type(act_type)
+    
+    urn = generate_urn(act_type=normalized_act_type, date=date, act_number=act_number, article=article, extension=extension, version=version,version_date=version_date)
     if urn is None:
         print("Errore nella generazione dell'URN.")
         return None

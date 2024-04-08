@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from functools import lru_cache
 
 def nospazi(text):
     textlist = text.split()
@@ -21,71 +22,77 @@ def estrai_numero_da_estensione(estensione):
     }
     return estensioni_numeriche.get(estensione, 0)
 
-
-def estrai_testo_articolo(atto, num_articolo=None, est_articolo=None, comma=None, tipo = "xml", annesso=None):
-    
+@lru_cache(maxsize=100)
+def estrai_testo_articolo(atto, num_articolo=None, est_articolo=None, comma=None, tipo="xml", annesso=None):
     if tipo == 'xml' and atto:
-        try:
-            soup = BeautifulSoup(atto, 'xml')
-            
-            if annesso:
-                soup = soup.find('annesso', {'id': str(annesso)})
-                return soup.get_text(separator="\n", strip=True)
-                
-                
-            if  num_articolo:
-                articoli = soup.find_all('articolo', {'id': str(num_articolo)}) 
-                #print(articoli) 
-                if not articoli:
-                    return "Nessun articolo trovato."
-                
-                # Selezionare l'articolo corretto in presenza di estensioni
-                if est_articolo:
-                    indice_estensione = estrai_numero_da_estensione(est_articolo)
-                    if indice_estensione >= len(articoli):
-                        return "Estensione dell'articolo non trovata."
-                    articolo = articoli[indice_estensione-1]
-                else:
-                    articolo = articoli[0]
-                
-                corpo = articolo.find('corpo')
-                # Gestione del comma
-                if comma is not None:
-                    comma_elements = corpo.find_all('h:p') #ERRORE nella formattazione ordinaria di Normattiva
-                    for p in comma_elements:
-                        if p.get_text().startswith(f'{comma}. ') or p.get_text().startswith(f'{comma}. ', 2) :
-                            return p.get_text(separator="\n", strip=True)
-                else:
-                    return articolo.get_text(separator="\n", strip=True)
-            else:
-                arts = []
-                articoli = soup.find_all('articolo')
-                for a in articoli:
-                    for tag_num in a.find_all('num'):
-                        tag_num.decompose()
-                    arts.append(a.get_text(separator="\n", strip=True))
-
-                return ''.join(arts)
-        except Exception as e:
-            return f"Errore generico: {e}"     
+        return estrai_da_xml(atto, num_articolo, est_articolo, comma, annesso)
     elif tipo == "html" and atto:
-        try:
-            soup = BeautifulSoup(atto, 'html.parser')
-            corpo = soup.find('div', class_='bodyTesto')
-            #print(corpo.text)
-            if not comma:
-                return corpo.text
+        return estrai_da_html(atto, comma)
+    else:
+        return "Tipo di atto non supportato o atto non fornito."
+
+@lru_cache(maxsize=100)
+def estrai_da_xml(atto, num_articolo, est_articolo, comma, annesso):
+    try:
+        soup = BeautifulSoup(atto, 'xml')
+        
+        if annesso:
+            soup = soup.find('annesso', {'id': str(annesso)})
+            return soup.get_text(separator="\n", strip=True)
+
+
+        if  num_articolo:
+            articoli = soup.find_all('articolo', {'id': str(num_articolo)}) 
+            #print(articoli) 
+            if not articoli:
+                return "Nessun articolo trovato."
+
+            # Selezionare l'articolo corretto in presenza di estensioni
+            if est_articolo:
+                indice_estensione = estrai_numero_da_estensione(est_articolo)
+                if indice_estensione >= len(articoli):
+                    return "Estensione dell'articolo non trovata."
+                articolo = articoli[indice_estensione-1]
             else:
-                parsedcorpo = corpo.find('div', class_='art-commi-div-akn')
-                commi = parsedcorpo.find_all('div', class_='art-comma-div-akn')
-                for c in commi:
-                    if f'{comma}.'in c.find('span', class_='comma-num-akn').text:
-                        return c.text.strip()
-                    
-                    
-        except Exception as e:
-            return f"Errore generico: {e}"
-                    
+                articolo = articoli[0]
+
+            corpo = articolo.find('corpo')
+            # Gestione del comma
+            if comma is not None:
+                comma_elements = corpo.find_all('h:p') #ERRORE nella formattazione ordinaria di Normattiva
+                for p in comma_elements:
+                    if p.get_text().startswith(f'{comma}. ') or p.get_text().startswith(f'{comma}. ', 2) :
+                        return p.get_text(separator="\n", strip=True)
+            else:
+                return articolo.get_text(separator="\n", strip=True)
+        else:
+            arts = []
+            articoli = soup.find_all('articolo')
+            for a in articoli:
+                for tag_num in a.find_all('num'):
+                    tag_num.decompose()
+                arts.append(a.get_text(separator="\n", strip=True))
+            return ''.join(arts)
+    except Exception as e:
+        return f"Errore generico: {e}" 
+
+@lru_cache(maxsize=100)
+def estrai_da_html(atto, comma):
+    try:
+        soup = BeautifulSoup(atto, 'html.parser')
+        corpo = soup.find('div', class_='bodyTesto')
+        #print(corpo.text)
+        if not comma:
+            return corpo.text
+        else:
+            parsedcorpo = corpo.find('div', class_='art-commi-div-akn')
+            commi = parsedcorpo.find_all('div', class_='art-comma-div-akn')
+            for c in commi:
+                if f'{comma}.'in c.find('span', class_='comma-num-akn').text:
+                    return c.text.strip()
+    except Exception as e:
+        return f"Errore generico: {e}"
+
 def conta_articoli(atto_xlm):
     """
     Conta il numero di articoli presenti in un documento XML.
