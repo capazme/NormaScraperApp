@@ -285,7 +285,6 @@ def setup_driver():
 
 def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
     
-    
     urn = generate_urn(act_type, date, act_number, article, extension, version, version_date)
     if urn is None:
         print("Errore nella generazione dell'URN.")
