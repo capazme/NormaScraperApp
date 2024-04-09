@@ -1,4 +1,6 @@
 from bs4 import BeautifulSoup
+import re
+import datetime
 from functools import lru_cache
 
 def nospazi(text):
@@ -7,6 +9,138 @@ def nospazi(text):
         t.strip
     textout = ' '.join(textlist)
     return textout
+
+def parse_date(input_date):
+    """
+    Converte una stringa di data in formato esteso o YYYY-MM-DD al formato YYYY-MM-DD.
+    Supporta mesi in italiano.
+    """
+    month_map = {
+        "gennaio": "01", "febbraio": "02", "marzo": "03", "aprile": "04",
+        "maggio": "05", "giugno": "06", "luglio": "07", "agosto": "08",
+        "settembre": "09", "ottobre": "10", "novembre": "11", "dicembre": "12"
+    }
+
+    # Tenta la conversione per formati con mesi per esteso
+    pattern = r"(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})"
+    match = re.search(pattern, input_date)
+    if match:
+        day, month, year = match.groups()
+        month = month_map.get(month.lower())
+        if not month:
+            raise ValueError("Mese non valido")
+        return f"{year}-{month}-{day.zfill(2)}"
+    
+    # Gestione del formato standard YYYY-MM-DD
+    try:
+        datetime.datetime.strptime(input_date, "%Y-%m-%d")
+        return input_date
+    except ValueError:
+        raise ValueError("Formato data non valido")
+
+def normalize_act_type(input_type):
+    """
+    Normalizes the type of legislative act based on a variable input.
+    """
+    act_types  = {
+    "decreto legge": "decreto.legge",
+    "decreto legislativo": "decreto.legislativo",
+    "d.lgs.":"decreto.legislativo",
+    "dlgs": "decreto.legislativo",
+    "dl": "decreto.legge",
+    "legge": "legge",
+    "l": "legge",
+    "l.": "legge",
+    "costituzione":"costituzione",
+    "cost": "costituzione",
+    "cost.": "costituzione",
+    "c.": "costituzione",
+    "cc": "codice civile",
+    "c.c.": "codice civile",
+    "codice civile":"codice civile",
+    "cod. civ.": "codice civile",
+    "disp. prel.": "preleggi",
+    "preleggi": "preleggi",
+    "prel.": "preleggi",
+    "cp": "codice penale",
+    "c.p.": "codice penale",
+    "cod. pen.": "codice penale",
+    "cpc": "codice di procedura civile",
+    "c.p.c": "codice di procedura civile",
+    "cod. proc. civ": "codice di procedura civile",
+    "cpp": "codice di procedura penale",
+    "c.p.p.": "codice di procedura penale",
+    "cod. proc. pen.": "codice di procedura penale",
+    "cn": "codice della navigazione",
+    "cod. nav.": "codice della navigazione",
+    "cpet": "codice postale e delle telecomunicazioni",
+    "cod. post. telecom.": "codice postale e delle telecomunicazioni",
+    "cds": "codice della strada",
+    "cod. strada": "codice della strada",
+    "cpt": "codice del processo tributario",
+    "cod. proc. trib.": "codice del processo tributario",
+    "cpd": "codice in materia di protezione dei dati personali",
+    "cod. prot. dati": "codice in materia di protezione dei dati personali",
+    "cce": "codice delle comunicazioni elettroniche",
+    "cod. com. elet.": "codice delle comunicazioni elettroniche",
+    "cbc": "codice dei beni culturali e del paesaggio",
+    "cod. beni cult.": "codice dei beni culturali e del paesaggio",
+    "cpi": "codice della proprietà industriale",
+    "cod. prop. ind.": "codice della proprietà industriale",
+    "cad": "codice dell'amministrazione digitale",
+    "cod. amm. dig.": "codice dell'amministrazione digitale",
+    "cnd": "codice della nautica da diporto",
+    "cod. naut. diport.": "codice della nautica da diporto",
+    "cdc": "codice del consumo",
+    "cod. consumo": "codice del consumo",
+    "cap": "codice delle assicurazioni private",
+    "cod. ass. priv.": "codice delle assicurazioni private",
+    "camb": "norme in materia ambientale",
+    "norme amb.": "norme in materia ambientale",
+    "ccp": "codice dei contratti pubblici",
+    "cod. contr. pubb.": "codice dei contratti pubblici",
+    "cpo": "codice delle pari opportunità",
+    "cod. pari opp.": "codice delle pari opportunità",
+    "com": "codice dell'ordinamento militare",
+    "cod. ord. mil.": "codice dell'ordinamento militare",
+    "cpa": "codice del processo amministrativo",
+    "cod. proc. amm.": "codice del processo amministrativo",
+    "ctu": "codice del turismo",
+    "cod. turismo": "codice del turismo",
+    "cam": "codice antimafia",
+    "cod. antimafia": "codice antimafia",
+    "cgco": "codice di giustizia contabile",
+    "cod. giust. cont.": "codice di giustizia contabile",
+    "cts": "codice del Terzo settore",
+    "cod. ter. sett.": "codice del Terzo settore",
+    "cdpc": "codice della protezione civile",
+    "cod. prot. civ.": "codice della protezione civile",
+    "cci": "codice della crisi d'impresa e dell'insolvenza",
+    "cod. crisi imp.": "codice della crisi d'impresa e dell'insolvenza",
+    "disp. att. c.c.": "disposizioni per l'attuazione del Codice civile e disposizioni transitorie",
+    "disp. att. c.p.c.": "disposizioni per l'attuazione del Codice di procedura civile e disposizioni transitorie"
+}
+    
+    input_type = input_type.lower().strip()
+    # Improved logic to ensure accurate mapping
+    for key, value in act_types.items():
+        if input_type == key or input_type == key.replace(" ", ""): 
+            return value
+    raise ValueError("Tipo di atto non riconosciuto")
+
+def estrai_data_da_denominazione(denominazione):
+    # Pattern per cercare una data nel formato "21 Marzo 2022"
+    pattern = r"\b(\d{1,2})\s([Gg]ennaio|[Ff]ebbraio|[Mm]arzo|[Aa]prile|[Mm]aggio|[Gg]iugno|[Ll]uglio|[Aa]gosto|[Ss]ettembre|[Oo]ttobre|[Nn]ovembre|[Dd]icembre)\s(\d{4})\b"
+    
+    # Ricerca della data all'interno della stringa utilizzando il pattern
+    match = re.search(pattern, denominazione)
+    
+    # Se viene trovata una corrispondenza, estrai e ritorna la data
+    if match:
+        return match.group(0)  # Ritorna l'intera corrispondenza
+    else:
+    # Se non viene trovata alcuna corrispondenza, ritorna None o una stringa vuota
+        return None
 
 def estrai_numero_da_estensione(estensione):
     estensioni_numeriche = {
@@ -21,6 +155,12 @@ def estrai_numero_da_estensione(estensione):
          'quadragiesquinquies': 45, 'quadragiessexies': 46, 'quadragiessepties': 47, 'duodequinquagies': 48, 'undequinquagies': 49,
     }
     return estensioni_numeriche.get(estensione, 0)
+
+def get_annex_from_urn(urn):
+    ann_num = re.search(r":(\d+)(!vig=|@originale)$", urn)
+    if ann_num:
+        return ann_num.group(1)
+    return None
 
 @lru_cache(maxsize=100)
 def estrai_testo_articolo(atto, num_articolo=None, est_articolo=None, comma=None, tipo="xml", annesso=None):

@@ -2,10 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu
 import webbrowser
 import pyperclip
-import asyncio
 import threading
-import time
-from urn import get_urn_and_extract_data
+from sys_op import get_urn_and_extract_data
 
 class Tooltip:
     def __init__(self, widget, text):
@@ -32,6 +30,30 @@ class Tooltip:
             self.tooltip_window.destroy()
             self.tooltip_window = None
 
+class NormaVisitata:
+    def __init__(self, tipo_atto, data=None, numero_atto=None, numero_articolo=None, url=None):
+        self.tipo_atto = tipo_atto
+        self.data = data if data else ""
+        self.numero_atto = numero_atto if numero_atto else ""
+        self.numero_articolo = numero_articolo if numero_articolo else ""
+        self.url = url if url else ""
+
+    def __str__(self):
+        parts = [self.tipo_atto]
+
+        if self.data:
+            parts.append(self.data)
+
+        if self.numero_atto:
+            parts.append(self.numero_atto)
+
+        if self.numero_articolo:
+            # Aggiunge 'art.' solo se numero_atto o data sono presenti per evitare stringhe tipo "Tipo atto art. Numero"
+            articolo_prefix = "art." if self.numero_atto or self.data else ""
+            parts.append(f"{articolo_prefix} {self.numero_articolo}".strip())
+
+        return " ".join(parts)
+
 class NormaScraperApp:
     def __init__(self, root):
         self.root = root
@@ -43,18 +65,17 @@ class NormaScraperApp:
         self.root.bind('<Control-h>', lambda event: self.apply_high_contrast_theme())
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
         self.create_widgets()
-
+        self.cronologia = []
 #
 #  STYLE
 #
 
     def setup_style(self):
         self.style = ttk.Style()
-        self.style.theme_use('alt')  # A theme better suited for accessibility
+        self.style.theme_use('alt')
         self.style.configure('TButton', font=('Helvetica', 15), foreground='black', background='white')
         self.style.configure('TEntry', padding=5, font=('Helvetica', 15))
         self.style.configure('TLabel', font=('Helvetica', 15))
-        # Accessibility: High contrast theme configurations
         self.style.configure('HighContrast.TButton', font=('Helvetica', 15), foreground='yellow', background='black')
 
 #
@@ -132,6 +153,8 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
 
         self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD, width=130, height=30)
         self.output_text.grid(row=10, column=0, columnspan=3, pady=10)
+        self.button_cronologia = ttk.Button(self.mainframe, text="Cronologia", command=self.apri_finestra_cronologia)
+        self.button_cronologia.grid(row=11, column=0, sticky="ew")
 
 #
 #  FUNCIONS
@@ -170,7 +193,71 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
         )
         if file_path:
             self.fetch_act_data(save_xml_path=file_path)
+            
 #
+# CRONOLOGIA
+#
+    def aggiungi_a_cronologia(self, norma):
+        # Controlla se la cronologia ha raggiunto la dimensione massima e rimuovi la voce più vecchia
+            if len(self.cronologia) >= 50:  # Sostituisci 10 con la dimensione massima desiderata
+                self.cronologia.pop(0)
+            self.cronologia.append(norma)
+
+    def apri_finestra_cronologia(self):
+        self.finestra_cronologia = tk.Toplevel(self.root)
+        self.finestra_cronologia.title("Cronologia Ricerche")
+        self.finestra_cronologia.geometry("600x400")
+
+        self.tree = ttk.Treeview(self.finestra_cronologia, columns=('Dato normativo', 'URL'), show='headings')
+        self.tree.heading('Dato normativo', text='Dato normativo')
+        self.tree.heading('URL', text='URL')
+
+        self.tree.column('Dato normativo', width=400)
+        self.tree.column('URL', width=200)
+
+        # Dizionario per tenere traccia degli oggetti NormaVisitata associati agli ID degli elementi Treeview
+        self.tree_items = {}
+
+        for norma in self.cronologia:
+            # Inserimento delle norme nella Treeview e memorizzazione dell'oggetto NormaVisitata nel dizionario
+            item_id = self.tree.insert('', tk.END, values=(str(norma), norma.url))
+            self.tree_items[item_id] = norma
+
+        self.tree.bind("<Double-1>", self.on_item_clicked)
+
+        scrollbar = ttk.Scrollbar(self.finestra_cronologia, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.pack(fill=tk.BOTH, expand=True)
+
+    def on_item_clicked(self, event):
+        region = self.tree.identify("region", event.x, event.y)
+        if region == "cell":
+            col = self.tree.identify_column(event.x)
+            item_id = self.tree.selection()[0]  # ID dell'elemento selezionato
+            norma = self.tree_items.get(item_id)  # Recupera l'oggetto NormaVisitata
+
+            if col == '#1':  # Clic su "Dato normativo"
+                self.ripeti_ricerca_selezionata(norma)
+            elif col == '#2' and norma.url:  # Clic su "URL"
+                webbrowser.open_new_tab(norma.url)
+
+    def ripeti_ricerca_selezionata(self, norma):
+        if norma:
+            self.act_type_entry.delete(0, tk.END)
+            self.act_type_entry.insert(0, norma.tipo_atto)
+
+            self.date_entry.delete(0, tk.END)
+            self.date_entry.insert(0, norma.data)
+
+            self.act_number_entry.delete(0, tk.END)
+            self.act_number_entry.insert(0, norma.numero_atto)
+
+            self.article_entry.delete(0, tk.END)
+            self.article_entry.insert(0, norma.numero_articolo)
+
+
+#       
 # OUTPUT
 #
     def fetch_act_data(self, save_xml_path=None):
@@ -188,6 +275,8 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
             self.output_text.delete('1.0', tk.END)
             self.output_text.insert(tk.END, data)
             self.crea_link("Apri URN Normattiva", url, 9, 1)
+            self.aggiungi_a_cronologia(NormaVisitata(tipo_atto=act_type, data=date, numero_atto=act_number, numero_articolo=article, url=url))
+
         except Exception as e:
             messagebox.showerror("Errore", str(e))
 

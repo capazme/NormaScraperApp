@@ -1,4 +1,3 @@
-import datetime
 import re
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -7,153 +6,32 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import requests
-from text_op import estrai_testo_articolo
+from text_op import estrai_testo_articolo, parse_date, normalize_act_type, estrai_data_da_denominazione, get_annex_from_urn
 from functools import lru_cache
 
-def parse_date(input_date):
-    """
-    Converte una stringa di data in formato esteso o YYYY-MM-DD al formato YYYY-MM-DD.
-    Supporta mesi in italiano.
-    """
-    month_map = {
-        "gennaio": "01", "febbraio": "02", "marzo": "03", "aprile": "04",
-        "maggio": "05", "giugno": "06", "luglio": "07", "agosto": "08",
-        "settembre": "09", "ottobre": "10", "novembre": "11", "dicembre": "12"
-    }
-
-    # Tenta la conversione per formati con mesi per esteso
-    pattern = r"(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})"
-    match = re.search(pattern, input_date)
-    if match:
-        day, month, year = match.groups()
-        month = month_map.get(month.lower())
-        if not month:
-            raise ValueError("Mese non valido")
-        return f"{year}-{month}-{day.zfill(2)}"
-    
-    # Gestione del formato standard YYYY-MM-DD
-    try:
-        datetime.datetime.strptime(input_date, "%Y-%m-%d")
-        return input_date
-    except ValueError:
-        raise ValueError("Formato data non valido")
-
-def normalize_act_type(input_type):
-    """
-    Normalizes the type of legislative act based on a variable input.
-    """
-    act_types  = {
-    "decreto legge": "decreto.legge",
-    "decreto legislativo": "decreto.legislativo",
-    "d.lgs.":"decreto.legislativo",
-    "dlgs": "decreto.legislativo",
-    "dl": "decreto.legge",
-    "legge": "legge",
-    "l": "legge",
-    "l.": "legge",
-    "costituzione":"costituzione",
-    "cost": "costituzione",
-    "cost.": "costituzione",
-    "c.": "costituzione",
-    "cc": "codice civile",
-    "c.c.": "codice civile",
-    "codice civile":"codice civile",
-    "cod. civ.": "codice civile",
-    "disp. prel.": "preleggi",
-    "preleggi": "preleggi",
-    "prel.": "preleggi",
-    "cp": "codice penale",
-    "c.p.": "codice penale",
-    "cod. pen.": "codice penale",
-    "cpc": "codice di procedura civile",
-    "c.p.c": "codice di procedura civile",
-    "cod. proc. civ": "codice di procedura civile",
-    "cpp": "codice di procedura penale",
-    "c.p.p.": "codice di procedura penale",
-    "cod. proc. pen.": "codice di procedura penale",
-    "cn": "codice della navigazione",
-    "cod. nav.": "codice della navigazione",
-    "cpet": "codice postale e delle telecomunicazioni",
-    "cod. post. telecom.": "codice postale e delle telecomunicazioni",
-    "cds": "codice della strada",
-    "cod. strada": "codice della strada",
-    "cpt": "codice del processo tributario",
-    "cod. proc. trib.": "codice del processo tributario",
-    "cpd": "codice in materia di protezione dei dati personali",
-    "cod. prot. dati": "codice in materia di protezione dei dati personali",
-    "cce": "codice delle comunicazioni elettroniche",
-    "cod. com. elet.": "codice delle comunicazioni elettroniche",
-    "cbc": "codice dei beni culturali e del paesaggio",
-    "cod. beni cult.": "codice dei beni culturali e del paesaggio",
-    "cpi": "codice della proprietà industriale",
-    "cod. prop. ind.": "codice della proprietà industriale",
-    "cad": "codice dell'amministrazione digitale",
-    "cod. amm. dig.": "codice dell'amministrazione digitale",
-    "cnd": "codice della nautica da diporto",
-    "cod. naut. diport.": "codice della nautica da diporto",
-    "cdc": "codice del consumo",
-    "cod. consumo": "codice del consumo",
-    "cap": "codice delle assicurazioni private",
-    "cod. ass. priv.": "codice delle assicurazioni private",
-    "camb": "norme in materia ambientale",
-    "norme amb.": "norme in materia ambientale",
-    "ccp": "codice dei contratti pubblici",
-    "cod. contr. pubb.": "codice dei contratti pubblici",
-    "cpo": "codice delle pari opportunità",
-    "cod. pari opp.": "codice delle pari opportunità",
-    "com": "codice dell'ordinamento militare",
-    "cod. ord. mil.": "codice dell'ordinamento militare",
-    "cpa": "codice del processo amministrativo",
-    "cod. proc. amm.": "codice del processo amministrativo",
-    "ctu": "codice del turismo",
-    "cod. turismo": "codice del turismo",
-    "cam": "codice antimafia",
-    "cod. antimafia": "codice antimafia",
-    "cgco": "codice di giustizia contabile",
-    "cod. giust. cont.": "codice di giustizia contabile",
-    "cts": "codice del Terzo settore",
-    "cod. ter. sett.": "codice del Terzo settore",
-    "cdpc": "codice della protezione civile",
-    "cod. prot. civ.": "codice della protezione civile",
-    "cci": "codice della crisi d'impresa e dell'insolvenza",
-    "cod. crisi imp.": "codice della crisi d'impresa e dell'insolvenza",
-    "disp. att. c.c.": "disposizioni per l'attuazione del Codice civile e disposizioni transitorie",
-    "disp. att. c.p.c.": "disposizioni per l'attuazione del Codice di procedura civile e disposizioni transitorie"
-}
-    
-    input_type = input_type.lower().strip()
-    # Improved logic to ensure accurate mapping
-    for key, value in act_types.items():
-        if input_type == key or input_type == key.replace(" ", ""): 
-            return value
-    raise ValueError("Tipo di atto non riconosciuto")
-
-def estrai_data_da_denominazione(denominazione):
-    # Pattern per cercare una data nel formato "21 Marzo 2022"
-    pattern = r"\b(\d{1,2})\s([Gg]ennaio|[Ff]ebbraio|[Mm]arzo|[Aa]prile|[Mm]aggio|[Gg]iugno|[Ll]uglio|[Aa]gosto|[Ss]ettembre|[Oo]ttobre|[Nn]ovembre|[Dd]icembre)\s(\d{4})\b"
-    
-    # Ricerca della data all'interno della stringa utilizzando il pattern
-    match = re.search(pattern, denominazione)
-    
-    # Se viene trovata una corrispondenza, estrai e ritorna la data
-    if match:
-        return match.group(0)  # Ritorna l'intera corrispondenza
-    
-    # Se non viene trovata alcuna corrispondenza, ritorna None o una stringa vuota
-    return None
+def setup_driver():
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920x1080")
+    driver = webdriver.Chrome(options=chrome_options)
+    return driver
 
 def complete_date(act_type, date, act_number):
+    try:    
         driver = setup_driver()
         driver.get("https://www.normattiva.it/")
-        search_box = driver.find_element(By.CLASS_NAME, "form-control.autocomplete.bg-transparent")  # Assicurati che il selettore sia corretto
+        search_box = driver.find_element(By.CSS_SELECTOR, ".form-control.autocomplete.bg-transparent")  # Assicurati che il selettore sia corretto
         search_criteria = f"{act_type} {act_number} {date}"  # Formatta i criteri di ricerca come preferisci
         search_box.send_keys(search_criteria)
         search_box.send_keys(Keys.ENTER)
-        elemento = driver.find_element(By.XPATH, '//*[@id="heading_1"]/p[1]/a')
+        elemento = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="heading_1"]/p[1]/a')))
         elemento_text = elemento.text
         data_completa = estrai_data_da_denominazione(elemento_text)
         driver.quit()
         return data_completa
+    except Exception as e:
+        return f"Errore nel completamento della data, inserisci la data completa: {e}" 
 
 def generate_urn(act_type, date=None, act_number=None, article=None, extension=None, version=None, version_date=None):
     """
@@ -242,12 +120,6 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
             
     return base_url + urn
 
-def get_annex_from_urn(urn):
-    ann_num = re.search(r":(\d+)(!vig=|@originale)$", urn)
-    if ann_num:
-        return ann_num.group(1)
-    return None
-
 @lru_cache(maxsize=100)
 def export_xml(driver, urn, timeout, annex):
     driver.get(urn)
@@ -274,15 +146,6 @@ def extract_html_article(urn, article, comma):
         html_content = response.text
         return estrai_testo_articolo(atto=html_content, num_articolo=article, comma=comma, tipo='html')
     return None
-
-@lru_cache(maxsize=50)
-def setup_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920x1080")
-    driver = webdriver.Chrome(options=chrome_options)
-    return driver
 
 @lru_cache(maxsize=100)
 def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
