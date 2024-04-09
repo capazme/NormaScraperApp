@@ -6,6 +6,7 @@ import pyperclip
 from usr import *
 from sys_op import get_urn_and_extract_data, generate_urn
 from text_op import normalize_act_type
+from config import ConfigurazioneDialog
 import os
 import sys 
 
@@ -81,10 +82,13 @@ class NormaScraperApp:
         self.root.bind('<Control-r>', lambda event: self.restart_app())
         self.root.bind('<Control-h>', lambda event: self.apply_high_contrast_theme())
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
+        self.root.bind('<Control-p>', lambda event: self.apri_configurazione())
+        self.root.bind('<Control-q>', lambda event: self.on_exit())
         self.setup_style()
         self.create_menu()
         self.create_widgets()
         self.cronologia = []
+
 #
 #  STYLE
 #
@@ -181,6 +185,8 @@ class NormaScraperApp:
         
         carica_cron = ttk.Button(self.mainframe, text="Carica cronologia", command=self.carica_cronologia)
         carica_cron.grid(row=11, column=3)
+        carica_cron = ttk.Button(self.mainframe, text="configura", command=self.apri_configurazione)
+        carica_cron.grid(row=11, column=4)
         
 
 
@@ -363,16 +369,18 @@ class NormaScraperApp:
         self.menu_bar.add_cascade(label="Accessibility", menu=self.accessibility_menu)
         self.accessibility_menu.add_command(label="Decrease Text Size", command=self.decrease_text_size)
         self.accessibility_menu.add_command(label="Normal Theme", command=self.apply_normal_theme)
+        #self.accessibility_menu.add_command(label="Configura", command=self.apri_configurazione)
         self.file_menu.add_command(label="Restart", command=self.restart_app)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Exit", command=self.on_exit)
+
+    def apri_configurazione(self):
+        ConfigurazioneDialog(self.root)
 
     def restart_app(self):
         """Restart the app."""
         python = sys.executable
         os.execl(python, python, *sys.argv)
-    
-    
 
     def apply_normal_theme(self):
         """Apply normal theme for default visibility."""
@@ -399,7 +407,9 @@ class NormaScraperApp:
         """Apply high contrast theme for better visibility."""
         self.style.configure('TButton', background='black', foreground='white')
         # Apply high contrast configurations to other widgets as needed
-    
+
+
+  
 if __name__ == "__main__":
     root = tk.Tk()
     app = NormaScraperApp(root)
