@@ -7,6 +7,7 @@ from usr import *
 from sys_op import get_urn_and_extract_data, generate_urn
 from text_op import normalize_act_type
 import os
+import sys 
 
 class Tooltip:
     def __init__(self, widget, text):
@@ -75,6 +76,7 @@ class NormaScraperApp:
         self.setup_style()
         self.create_menu()
         self.root.bind('<Control-i>', lambda event: self.increase_text_size())
+        self.root.bind('<Control-r>', lambda event: self.restart_app())
         self.root.bind('<Control-d>', lambda event: self.decrease_text_size())
         self.root.bind('<Control-h>', lambda event: self.apply_high_contrast_theme())
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
@@ -357,7 +359,15 @@ class NormaScraperApp:
         self.menu_bar.add_cascade(label="Accessibility", menu=self.accessibility_menu)
         self.accessibility_menu.add_command(label="Decrease Text Size", command=self.decrease_text_size)
         self.accessibility_menu.add_command(label="Normal Theme", command=self.apply_normal_theme)
+        self.file_menu.add_command(label="Restart", command=self.restart_app)
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label="Exit", command=self.on_exit)
 
+    def restart_app(self):
+        """Restart the app."""
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
+    
     def decrease_text_size(self):
         """Decrease text size of the widgets."""
         self.style.configure('TButton', font=('Helvetica', 10))
