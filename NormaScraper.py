@@ -7,6 +7,7 @@ from usr import *
 from sys_op import get_urn_and_extract_data, generate_urn
 from text_op import normalize_act_type
 from config import ConfigurazioneDialog
+from update import AutoUpdater
 import os
 import sys 
 
@@ -88,6 +89,12 @@ class NormaScraperApp:
         self.create_menu()
         self.create_widgets()
         self.cronologia = []
+        self.updater = AutoUpdater(
+            repo_path='https://github.com/capazme/NormaScraperApp.git',
+            pyinstaller_cmd='pyinstaller -c -F -i resources/icon.icns --onefile NormaScraper.py',
+            app=self
+        )
+
 
 #
 #  STYLE
@@ -372,6 +379,7 @@ class NormaScraperApp:
         #self.accessibility_menu.add_command(label="Configura", command=self.apri_configurazione)
         self.file_menu.add_command(label="Restart", command=self.restart_app)
         self.file_menu.add_separator()
+        self.file_menu.add_command(label="Check for Updates", command=self.check_for_updates)
         self.file_menu.add_command(label="Exit", command=self.on_exit)
 
     def apri_configurazione(self):
@@ -407,6 +415,23 @@ class NormaScraperApp:
         """Apply high contrast theme for better visibility."""
         self.style.configure('TButton', background='black', foreground='white')
         # Apply high contrast configurations to other widgets as needed
+
+    def check_for_updates(self):
+        if self.updater.check_for_updates():
+            updates_available = self.updater.get_commit_messages()
+            if updates_available:
+                message = "Sono disponibili aggiornamenti:\n\n" + "\n".join(updates_available)
+                if messagebox.askyesno("Aggiornamenti disponibili", message + "\n\nVuoi aggiornare l'applicazione?"):
+                    self.updater.rebuild_app()
+                    self.updater.restart_app()
+                    messagebox.showinfo("Aggiornamento completato", "L'applicazione è stata aggiornata con successo.")
+                else:
+                    messagebox.showinfo("Aggiornamenti ignorati", "L'applicazione non è stata aggiornata.")
+            else:
+                messagebox.showinfo("Nessun aggiornamento", "Non ci sono aggiornamenti disponibili.")
+        else:
+            messagebox.showinfo("Nessun aggiornamento", "Non ci sono aggiornamenti disponibili.")
+
 
 
   
