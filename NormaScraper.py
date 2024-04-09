@@ -7,7 +7,6 @@ from usr import *
 from sys_op import get_urn_and_extract_data, generate_urn
 from text_op import normalize_act_type
 import os
-import time
 
 class Tooltip:
     def __init__(self, widget, text):
@@ -61,7 +60,14 @@ class NormaVisitata:
     def get_url(self):
         self.url = generate_urn(self.tipo_atto, date=self.data, act_number=self.numero_atto, article=self.numero_articolo)
         return self.url
+    
+    def to_dict(self):
+        return {'tipo_atto': self.tipo_atto, 'data': self.data, 'numero_atto': self.numero_atto, 'numero_articolo': self.numero_articolo, 'url': self.url}
 
+    @staticmethod
+    def from_dict(data):
+        return NormaVisitata(**data)
+    
 class NormaScraperApp:
     def __init__(self, root):
         self.root = root
@@ -73,24 +79,7 @@ class NormaScraperApp:
         self.root.bind('<Control-h>', lambda event: self.apply_high_contrast_theme())
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
         self.create_widgets()
-        self.user_prefs = UserPreferences()
         self.cronologia = []
-        self.load_user_preferences()
-        
-#
-# USER
-#
-
-    def load_user_preferences(self):
-            # Carica le preferenze utente e aggiorna l'UI di conseguenza
-            act_type = self.user_prefs.get_preference('act_type', 'legge')
-            self.act_type_combobox.set(act_type)  # Esempio per il tipo di atto
-
-    def save_user_preference(self):
-        # Salva le preferenze utente al momento della ricerca o al cambio di stato dell'UI
-        act_type = self.act_type_combobox.get()
-        self.user_prefs.set_preference('act_type', act_type)
-
 #
 #  STYLE
 #
@@ -118,6 +107,7 @@ class NormaScraperApp:
 
         # Input fields
         self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Seleziona o digita il tipo di atto (es. legge, decreto)", 0, 0)
+        
         act_types = ['costituzione', 'codice civile', 'preleggi', 'codice penale', 'codice di procedura civile', 'codice di procedura penale', 'codice della navigazione', 'codice postale e delle telecomunicazioni', 'codice della strada', 'codice del processo tributario', 'codice in materia di protezione dei dati personali', 'codice delle comunicazioni elettroniche', 'codice dei beni culturali e del paesaggio', 'codice della proprietà industriale', "codice dell'amministrazione digitale", 'codice della nautica da diporto', 'codice del consumo', 'codice delle assicurazioni private', 'norme in materia ambientale', 'codice dei contratti pubblici', 'codice delle pari opportunità', "codice dell'ordinamento militare", 'codice del processo amministrativo', 'codice del turismo', 'codice antimafia', 'codice di giustizia contabile', 'codice del terzo settore', 'codice della protezione civile', "codice della crisi d'impresa e dell'insolvenza"]
         self.act_type_combobox = ttk.Combobox(self.mainframe, values=act_types, font=('Helvetica', 15))
         self.act_type_combobox.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=2, pady=2)
@@ -134,7 +124,8 @@ class NormaScraperApp:
         self.version_var = tk.StringVar(value="vigente")
         ttk.Radiobutton(self.mainframe, text="Originale", variable=self.version_var, value="originale").grid(row=6, column=1, sticky=tk.W)
         ttk.Radiobutton(self.mainframe, text="Vigente", variable=self.version_var, value="vigente").grid(row=6, column=2, sticky=tk.W)
-
+        
+       
 
 
         self.version_date_entry = self.create_labeled_entry("Data versione atto (se non originale):", "Inserisci la data di versione dell'atto desiderata (default alla data corrente)", 7, 0)
@@ -153,13 +144,16 @@ class NormaScraperApp:
         self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD, width=130, height=30)
         self.output_text.grid(row=10, column=0, columnspan=3, pady=10)
         
-        
         self.button_cronologia = ttk.Button(self.mainframe, text="Cronologia", command=self.apri_finestra_cronologia)
         self.button_cronologia.grid(row=11, column=0, sticky="ew")
+        
         salva_cron = ttk.Button(self.mainframe, text="Salva cronologia", command=self.salva_cronologia)
-        salva_cron.grid(row=11, column=1)
+        salva_cron.grid(row=11, column=2)
+        
         carica_cron = ttk.Button(self.mainframe, text="Carica cronologia", command=self.carica_cronologia)
-        carica_cron.grid(row=11, column=2)
+        carica_cron.grid(row=11, column=3)
+        
+
 
 #
 #  FUNCIONS
@@ -201,60 +195,46 @@ class NormaScraperApp:
             
 #
 # CRONOLOGIA
-#
+#        
     def aggiungi_a_cronologia(self, norma):
-        # Controlla se la cronologia ha raggiunto la dimensione massima e rimuovi la voce più vecchia
-            if len(self.cronologia) >= 50:  # Sostituisci 10 con la dimensione massima desiderata
-                self.cronologia.pop(0)
-            if norma not in self.cronologia:
-                self.cronologia.append(norma)
-            else:
-                pass
-                
+        # Controlla la dimensione massima della cronologia e aggiunge una nuova norma
+        if len(self.cronologia) >= 50:
+            self.cronologia.pop(0)
+        if norma not in self.cronologia:
+            self.cronologia.append(norma)
 
     def apri_finestra_cronologia(self):
-        self.finestra_cronologia = Toplevel(self.root)
+        self.finestra_cronologia = tk.Toplevel(self.root)
         self.finestra_cronologia.title("Cronologia Ricerche")
         self.finestra_cronologia.geometry("600x400")
-
-        # Dizionario per tenere traccia degli oggetti NormaVisitata associati agli ID degli elementi Treeview
-        self.tree_items = {}
 
         self.tree = ttk.Treeview(self.finestra_cronologia, columns=('Dato normativo', 'URL'), show='headings')
         self.tree.heading('Dato normativo', text='Dato normativo')
         self.tree.heading('URL', text='URL')
         self.tree.column('Dato normativo', width=400)
         self.tree.column('URL', width=200)
-
+        
+        self.tree_items = {}
         for norma in self.cronologia:
             item_id = self.tree.insert('', tk.END, values=(str(norma), norma.url))
             self.tree_items[item_id] = norma
 
         self.tree.bind("<Double-1>", self.on_item_clicked)
-
         scrollbar = ttk.Scrollbar(self.finestra_cronologia, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
-
-        # Posizionamento del treeview e della scrollbar
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        # Pulsante per pulire la cronologia
-        reset_button = ttk.Button(self.finestra_cronologia, text="Pulisci", command=self.cancella_cronologia)
-        reset_button.pack(side=tk.TOP, pady=10)  # Posiziona il pulsante "Pulisci" in alto con un po' di spazio
-
     def on_item_clicked(self, event):
-        region = self.tree.identify("region", event.x, event.y)
-        if region == "cell":
-            col = self.tree.identify_column(event.x)
-            item_id = self.tree.selection()[0]  # ID dell'elemento selezionato
-            norma = self.tree_items.get(item_id)  # Recupera l'oggetto NormaVisitata
-
-            if col == '#1':  # Clic su "Dato normativo"
-                self.ripeti_ricerca_selezionata(norma)
-            elif col == '#2' and norma.url:  # Clic su "URL"
-                webbrowser.open_new_tab(norma.url)
-
+        col = self.tree.identify_column(event.x)
+        item_id = self.tree.selection()[0]
+        norma = self.tree_items.get(item_id)
+        
+        if col == '#1' and norma:  # Clic su "Dato normativo"
+            self.ripeti_ricerca_selezionata(norma)
+        elif col == '#2' and norma.url:  # Clic su "URL"
+            webbrowser.open_new_tab(norma.url)
+                
     def ripeti_ricerca_selezionata(self, norma):
         if norma:
             self.act_type_combobox.delete(0, tk.END)
@@ -269,33 +249,27 @@ class NormaScraperApp:
             self.article_entry.delete(0, tk.END)
             self.article_entry.insert(0, norma.numero_articolo)
 
-    def salva_cronologia(self, filename):
-        if not filename:
-            nome_file = simpledialog.askstring("Salva Cronologia", "Inserisci il nome del file:")
-            percorso_completo = os.path.join("usr", "cron", f"{nome_file}.json")
-            os.makedirs(os.path.dirname(percorso_completo), exist_ok=True)
+    def salva_cronologia(self):
+        nome_file = simpledialog.askstring("Salva Cronologia", "Inserisci il nome del file:")
+        if nome_file:
+            percorso_completo = os.path.join(os.getcwd(), f"{nome_file}.json")
             with open(percorso_completo, 'w') as f:
-                json.dump([norma.__dict__ for norma in self.cronologia], f, indent=4)
-            messagebox.showinfo("Salvato", f"Cronologia salvata in {percorso_completo}")
-        elif filename:
-            percorso_completo = os.path.join("usr", "cron", f".{filename}.json")
-            os.makedirs(os.path.dirname(percorso_completo), exist_ok=True)
-            with open(percorso_completo, 'w') as f:
-                json.dump([norma.__dict__ for norma in self.cronologia], f, indent=4)
-            messagebox.showinfo("Salvato", f"Cronologia salvata in {percorso_completo}")
+                json.dump([n.to_dict() for n in self.cronologia], f, indent=4)
+            messagebox.showinfo("Salvato", "Cronologia salvata in " + percorso_completo)
 
     def carica_cronologia(self):
-        percorso_file = filedialog.askopenfilename(initialdir=os.path.join("usr", "cron"), title="Seleziona file cronologia", filetypes=(("JSON files", "*.json"), ("all files", "*.*")))
+        percorso_file = filedialog.askopenfilename(title="Seleziona file cronologia", filetypes=(("JSON files", "*.json"), ("all files", "*.*")))
         if percorso_file:
             with open(percorso_file, 'r') as f:
-                cronologia_caricata = json.load(f)
-                self.cronologia = [NormaVisitata(**norma) for norma in cronologia_caricata]
+                self.cronologia = [NormaVisitata.from_dict(n) for n in json.load(f)]
             messagebox.showinfo("Caricato", "Cronologia caricata con successo")
-    
+            self.apri_finestra_cronologia()
+ 
+
     def cancella_cronologia(self):
-        # Implementazione del metodo per pulire la cronologia
+        # Pulisce la cronologia
         self.cronologia.clear()
-        self.tree.delete(*self.tree.get_children())
+        messagebox.showinfo("Cronologia", "Cronologia pulita con successo.")
 
 
 #       

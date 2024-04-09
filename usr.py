@@ -1,7 +1,5 @@
 import json
 
-import json
-
 class UserPreferences:
     def __init__(self, prefs_file='user_preferences.json'):
         self.prefs_file = prefs_file
@@ -24,4 +22,5 @@ class UserPreferences:
     def set_preference(self, key, value):
         self.preferences[key] = value
         self.save_preferences()
+    
 
