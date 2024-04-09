@@ -7,9 +7,81 @@ from usr import *
 from sys_op import get_urn_and_extract_data, generate_urn
 from text_op import normalize_act_type
 from config import ConfigurazioneDialog
-from update import AutoUpdater
 import os
-import sys 
+import sys
+import git
+import subprocess 
+
+class AutoUpdater:
+    def __init__(self, repo_path, pyinstaller_cmd, app):
+        self.repo_path = repo_path
+        self.pyinstaller_cmd = pyinstaller_cmd
+        self.app = app
+
+    def check_for_updates(self):
+        try:
+            print("Checking for updates...")
+            repo = git.Repo(self.repo_path)
+            current = repo.head.commit
+            repo.remotes.origin.pull()
+            updated = repo.head.commit
+            if current != updated:
+                print("Updates checked. New updates found.")
+                return True
+            else:
+                print("Updates checked. No new updates.")
+                return False
+        except Exception as e:
+            print(f"Error checking for updates: {e}")
+            messagebox.showerror("Errore", f"Impossibile verificare gli aggiornamenti: {e}")
+            return False
+
+    def rebuild_app(self):
+        print("Rebuilding the application...")
+        try:
+            subprocess.run(self.pyinstaller_cmd, shell=True, check=True)
+            print("Application rebuilt.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error rebuilding the application: {e}")
+            messagebox.showerror("Errore", f"Impossibile ricostruire l'applicazione: {e}")
+
+    def restart_app(self):
+        print("Restarting the application...")
+        self.app.on_exit()
+        subprocess.run("python " + " ".join(sys.argv), shell=True)
+
+    def get_commit_messages(self):
+        try:
+            print("Getting commit messages...")
+            repo = git.Repo(self.repo_path)
+            origin = repo.remotes.origin
+            origin.fetch()
+            local_commits = list(repo.iter_commits('master..origin/master'))
+            commit_messages = [commit.message.strip() for commit in local_commits]
+            print("Commit messages retrieved:", commit_messages)
+            return commit_messages
+        except Exception as e:
+            print(f"Error getting commit messages: {e}")
+            messagebox.showerror("Errore", f"Impossibile ottenere i messaggi di commit: {e}")
+            return []
+
+    def run(self):
+        print("AutoUpdater started.")
+        if self.check_for_updates():
+            updates_available = self.get_commit_messages()
+            if updates_available:
+                message = "Sono disponibili aggiornamenti:\n\n" + "\n".join(updates_available)
+                if messagebox.askyesno("Aggiornamenti disponibili", message + "\n\nVuoi aggiornare l'applicazione?"):
+                    self.rebuild_app()
+                    self.restart_app()
+                    messagebox.showinfo("Aggiornamento completato", "L'applicazione è stata aggiornata con successo.")
+                else:
+                    messagebox.showinfo("Aggiornamenti ignorati", "L'applicazione non è stata aggiornata.")
+            else:
+                print("No new updates available.")
+                messagebox.showinfo("Nessun aggiornamento", "Non ci sono aggiornamenti disponibili.")
+        else:
+            messagebox.showinfo("Nessun aggiornamento", "Non ci sono aggiornamenti disponibili.")
 
 class Tooltip:
     def __init__(self, widget, text):
@@ -417,24 +489,8 @@ class NormaScraperApp:
         # Apply high contrast configurations to other widgets as needed
 
     def check_for_updates(self):
-        if self.updater.check_for_updates():
-            updates_available = self.updater.get_commit_messages()
-            if updates_available:
-                message = "Sono disponibili aggiornamenti:\n\n" + "\n".join(updates_available)
-                if messagebox.askyesno("Aggiornamenti disponibili", message + "\n\nVuoi aggiornare l'applicazione?"):
-                    self.updater.rebuild_app()
-                    self.updater.restart_app()
-                    messagebox.showinfo("Aggiornamento completato", "L'applicazione è stata aggiornata con successo.")
-                else:
-                    messagebox.showinfo("Aggiornamenti ignorati", "L'applicazione non è stata aggiornata.")
-            else:
-                messagebox.showinfo("Nessun aggiornamento", "Non ci sono aggiornamenti disponibili.")
-        else:
-            messagebox.showinfo("Nessun aggiornamento", "Non ci sono aggiornamenti disponibili.")
+        self.updater.run()
 
-
-
-  
 if __name__ == "__main__":
     root = tk.Tk()
     app = NormaScraperApp(root)
