@@ -73,13 +73,16 @@ class NormaScraperApp:
     def __init__(self, root):
         self.root = root
         self.root.title("NormaScraper - Beta")
-        self.setup_style()
-        self.create_menu()
+        self.font_size = 15  # Imposta la dimensione iniziale del font
+        self.font_size_min = 10  # Dimensione minima del font
+        self.font_size_max = 30
         self.root.bind('<Control-i>', lambda event: self.increase_text_size())
+        self.root.bind('<Control-o>', lambda event: self.decrease_text_size())
         self.root.bind('<Control-r>', lambda event: self.restart_app())
-        self.root.bind('<Control-d>', lambda event: self.decrease_text_size())
         self.root.bind('<Control-h>', lambda event: self.apply_high_contrast_theme())
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
+        self.setup_style()
+        self.create_menu()
         self.create_widgets()
         self.cronologia = []
 #
@@ -89,10 +92,11 @@ class NormaScraperApp:
     def setup_style(self):
         self.style = ttk.Style()
         self.style.theme_use('alt')
-        self.style.configure('TButton', font=('Helvetica', 15), foreground='black', background='white')
-        self.style.configure('TEntry', padding=5, font=('Helvetica', 15))
-        self.style.configure('TLabel', font=('Helvetica', 15))
-        self.style.configure('HighContrast.TButton', font=('Helvetica', 15), foreground='yellow', background='black')
+        self.style.configure('TButton', font=('Helvetica', self.font_size), foreground='black', background='white')
+        self.style.configure('TEntry', padding=5, font=('Helvetica', self.font_size))
+        self.style.configure('TLabel', font=('Helvetica', self.font_size))
+        self.style.configure('TRadioButton', font=('Helvetica', self.font_size))
+
 
 #
 #  INPUT
@@ -368,10 +372,7 @@ class NormaScraperApp:
         python = sys.executable
         os.execl(python, python, *sys.argv)
     
-    def decrease_text_size(self):
-        """Decrease text size of the widgets."""
-        self.style.configure('TButton', font=('Helvetica', 10))
-        self.style.configure('TLabel', font=('Helvetica', 10))
+    
 
     def apply_normal_theme(self):
         """Apply normal theme for default visibility."""
@@ -382,10 +383,17 @@ class NormaScraperApp:
         self.root.quit()
 
     def increase_text_size(self):
-        """Increase text size of the widgets."""
-        # Example: Increase font size for buttons
-        self.style.configure('TButton', font=('Helvetica', 14))
-        self.style.configure('TLabel', font=('Helvetica', 14))
+        """Aumenta la dimensione del testo entro il limite massimo."""
+        if self.font_size < self.font_size_max:
+            self.font_size += 2  # Incrementa di 2 punti
+            self.setup_style()  # Riapplica gli stili con la nuova dimensione del font
+
+    def decrease_text_size(self):
+        """Diminuisce la dimensione del testo entro il limite minimo."""
+        if self.font_size > self.font_size_min:
+            self.font_size -= 2  # Decrementa di 2 punti
+            self.setup_style()  # Riapplica gli stili con la nuova dimensione del font
+
 
     def apply_high_contrast_theme(self):
         """Apply high contrast theme for better visibility."""
