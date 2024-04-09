@@ -1,10 +1,13 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu
+import tkinter as tk 
+import json
+from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialog, Toplevel
 import webbrowser
 import pyperclip
-import threading
+from usr import *
 from sys_op import get_urn_and_extract_data, generate_urn
 from text_op import normalize_act_type
+import os
+import time
 
 class Tooltip:
     def __init__(self, widget, text):
@@ -70,7 +73,24 @@ class NormaScraperApp:
         self.root.bind('<Control-h>', lambda event: self.apply_high_contrast_theme())
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
         self.create_widgets()
+        self.user_prefs = UserPreferences()
         self.cronologia = []
+        self.load_user_preferences()
+        
+#
+# USER
+#
+
+    def load_user_preferences(self):
+            # Carica le preferenze utente e aggiorna l'UI di conseguenza
+            act_type = self.user_prefs.get_preference('act_type', 'legge')
+            self.act_type_combobox.set(act_type)  # Esempio per il tipo di atto
+
+    def save_user_preference(self):
+        # Salva le preferenze utente al momento della ricerca o al cambio di stato dell'UI
+        act_type = self.act_type_combobox.get()
+        self.user_prefs.set_preference('act_type', act_type)
+
 #
 #  STYLE
 #
@@ -129,10 +149,17 @@ class NormaScraperApp:
         copia_button = ttk.Button(self.mainframe, text="Copia Testo", command=self.copia_output)
         copia_button.grid(row=8, column=3)
 
+
         self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD, width=130, height=30)
         self.output_text.grid(row=10, column=0, columnspan=3, pady=10)
+        
+        
         self.button_cronologia = ttk.Button(self.mainframe, text="Cronologia", command=self.apri_finestra_cronologia)
         self.button_cronologia.grid(row=11, column=0, sticky="ew")
+        salva_cron = ttk.Button(self.mainframe, text="Salva cronologia", command=self.salva_cronologia)
+        salva_cron.grid(row=11, column=1)
+        carica_cron = ttk.Button(self.mainframe, text="Carica cronologia", command=self.carica_cronologia)
+        carica_cron.grid(row=11, column=2)
 
 #
 #  FUNCIONS
@@ -186,22 +213,20 @@ class NormaScraperApp:
                 
 
     def apri_finestra_cronologia(self):
-        self.finestra_cronologia = tk.Toplevel(self.root)
+        self.finestra_cronologia = Toplevel(self.root)
         self.finestra_cronologia.title("Cronologia Ricerche")
         self.finestra_cronologia.geometry("600x400")
-
-        self.tree = ttk.Treeview(self.finestra_cronologia, columns=('Dato normativo', 'URL'), show='headings')
-        self.tree.heading('Dato normativo', text='Dato normativo')
-        self.tree.heading('URL', text='URL')
-
-        self.tree.column('Dato normativo', width=400)
-        self.tree.column('URL', width=200)
 
         # Dizionario per tenere traccia degli oggetti NormaVisitata associati agli ID degli elementi Treeview
         self.tree_items = {}
 
+        self.tree = ttk.Treeview(self.finestra_cronologia, columns=('Dato normativo', 'URL'), show='headings')
+        self.tree.heading('Dato normativo', text='Dato normativo')
+        self.tree.heading('URL', text='URL')
+        self.tree.column('Dato normativo', width=400)
+        self.tree.column('URL', width=200)
+
         for norma in self.cronologia:
-            # Inserimento delle norme nella Treeview e memorizzazione dell'oggetto NormaVisitata nel dizionario
             item_id = self.tree.insert('', tk.END, values=(str(norma), norma.url))
             self.tree_items[item_id] = norma
 
@@ -209,8 +234,14 @@ class NormaScraperApp:
 
         scrollbar = ttk.Scrollbar(self.finestra_cronologia, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
+
+        # Posizionamento del treeview e della scrollbar
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
+
+        # Pulsante per pulire la cronologia
+        reset_button = ttk.Button(self.finestra_cronologia, text="Pulisci", command=self.cancella_cronologia)
+        reset_button.pack(side=tk.TOP, pady=10)  # Posiziona il pulsante "Pulisci" in alto con un po' di spazio
 
     def on_item_clicked(self, event):
         region = self.tree.identify("region", event.x, event.y)
@@ -237,6 +268,34 @@ class NormaScraperApp:
 
             self.article_entry.delete(0, tk.END)
             self.article_entry.insert(0, norma.numero_articolo)
+
+    def salva_cronologia(self, filename):
+        if not filename:
+            nome_file = simpledialog.askstring("Salva Cronologia", "Inserisci il nome del file:")
+            percorso_completo = os.path.join("usr", "cron", f"{nome_file}.json")
+            os.makedirs(os.path.dirname(percorso_completo), exist_ok=True)
+            with open(percorso_completo, 'w') as f:
+                json.dump([norma.__dict__ for norma in self.cronologia], f, indent=4)
+            messagebox.showinfo("Salvato", f"Cronologia salvata in {percorso_completo}")
+        elif filename:
+            percorso_completo = os.path.join("usr", "cron", f".{filename}.json")
+            os.makedirs(os.path.dirname(percorso_completo), exist_ok=True)
+            with open(percorso_completo, 'w') as f:
+                json.dump([norma.__dict__ for norma in self.cronologia], f, indent=4)
+            messagebox.showinfo("Salvato", f"Cronologia salvata in {percorso_completo}")
+
+    def carica_cronologia(self):
+        percorso_file = filedialog.askopenfilename(initialdir=os.path.join("usr", "cron"), title="Seleziona file cronologia", filetypes=(("JSON files", "*.json"), ("all files", "*.*")))
+        if percorso_file:
+            with open(percorso_file, 'r') as f:
+                cronologia_caricata = json.load(f)
+                self.cronologia = [NormaVisitata(**norma) for norma in cronologia_caricata]
+            messagebox.showinfo("Caricato", "Cronologia caricata con successo")
+    
+    def cancella_cronologia(self):
+        # Implementazione del metodo per pulire la cronologia
+        self.cronologia.clear()
+        self.tree.delete(*self.tree.get_children())
 
 
 #       
@@ -292,7 +351,7 @@ class NormaScraperApp:
         self.menu_bar.add_cascade(label="Accessibility", menu=self.accessibility_menu)
         self.accessibility_menu.add_command(label="Decrease Text Size", command=self.decrease_text_size)
         self.accessibility_menu.add_command(label="Normal Theme", command=self.apply_normal_theme)
-        
+
     def decrease_text_size(self):
         """Decrease text size of the widgets."""
         self.style.configure('TButton', font=('Helvetica', 10))
