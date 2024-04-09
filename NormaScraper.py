@@ -115,8 +115,31 @@ class NormaScraperApp:
         
         self.date_entry = self.create_labeled_entry("Data:", "Inserisci la data in formato YYYY-MM-DD, per esteso o solo anno (inserire solo l'anno comporterà un caricamento più lungo)", 1, 0)
         self.act_number_entry = self.create_labeled_entry("Numero atto:", "Inserisci il numero dell'atto (obbligatorio se il tipo di atto è generico)", 2, 0)
-        self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo, con eventuale estensione con trattino (-bis, -tris etc...)", 3, 0)
-        self.extension_entry = self.create_labeled_entry("Estensione:", "Inserisci l'estensione (bis, tris etc...)", 4, 0)
+        
+        self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 3, 0)
+
+        # Pulsante di espansione allineato con l'entry dell'articolo
+        self.toggle_extension_btn = ttk.Button(self.mainframe, text="▼", command=self.toggle_extension)
+        self.toggle_extension_btn.grid(row=3, column=3, sticky=tk.W, padx=2)
+        
+        # Configurazione per il frame dell'estensione, che verrà mostrato o nascosto
+        self.extension_frame = ttk.Frame(self.mainframe)
+        self.extension_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E))
+
+        # Configura la griglia del frame dell'estensione
+        self.extension_frame.columnconfigure(0, weight=1)  # Lascia che questa colonna si espanda
+        self.extension_frame.columnconfigure(1, weight=0)  # Lascia che questa colonna si espanda di più, in modo da spingere l'entry verso destra
+
+        self.extension_label = ttk.Label(self.extension_frame, text="Estensione:")
+        self.extension_label.grid(row=0, column=0, sticky=(tk.W), pady=2)
+
+        self.extension_entry = ttk.Entry(self.extension_frame)
+        self.extension_entry.grid(row=0, column=1, sticky=(tk.E), ipadx=70, pady=2) 
+
+        self.extension_frame.grid_forget()  # Inizia con il frame dell'estensione nascosto
+        
+
+        
         self.comma_entry = self.create_labeled_entry("Comma:", "Inserisci il comma, con eventuale estensione con trattino (-bis, -tris etc...) ", 5, 0)
 
         # Version radio buttons
@@ -158,6 +181,15 @@ class NormaScraperApp:
 #
 #  FUNCIONS
 #
+    def toggle_extension(self):
+        """Mostra o nasconde il frame dell'estensione."""
+        if self.extension_frame.winfo_viewable():
+            self.extension_frame.grid_forget()
+            self.toggle_extension_btn.config(text="▼")
+        else:
+            self.extension_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E))
+            self.toggle_extension_btn.config(text="▲")
+
 
     def create_labeled_entry(self, label_text, tooltip_text, row, col):
         ttk.Label(self.mainframe, text=label_text).grid(row=row, column=col, sticky=tk.W)
