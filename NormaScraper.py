@@ -252,7 +252,7 @@ class NormaScraperApp:
     def salva_cronologia(self):
         nome_file = simpledialog.askstring("Salva Cronologia", "Inserisci il nome del file:")
         if nome_file:
-            percorso_completo = os.path.join(os.getcwd(), f"{nome_file}.json")
+            percorso_completo = os.path.join("usr", "cron", f"{nome_file}.json")
             with open(percorso_completo, 'w') as f:
                 json.dump([n.to_dict() for n in self.cronologia], f, indent=4)
             messagebox.showinfo("Salvato", "Cronologia salvata in " + percorso_completo)
