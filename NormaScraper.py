@@ -3,7 +3,8 @@ from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu
 import webbrowser
 import pyperclip
 import threading
-from sys_op import get_urn_and_extract_data
+from sys_op import get_urn_and_extract_data, generate_urn
+from text_op import normalize_act_type
 
 class Tooltip:
     def __init__(self, widget, text):
@@ -32,7 +33,7 @@ class Tooltip:
 
 class NormaVisitata:
     def __init__(self, tipo_atto, data=None, numero_atto=None, numero_articolo=None, url=None):
-        self.tipo_atto = tipo_atto
+        self.tipo_atto = normalize_act_type(tipo_atto)
         self.data = data if data else ""
         self.numero_atto = numero_atto if numero_atto else ""
         self.numero_articolo = numero_articolo if numero_articolo else ""
@@ -53,6 +54,10 @@ class NormaVisitata:
             parts.append(f"{articolo_prefix} {self.numero_articolo}".strip())
 
         return " ".join(parts)
+    
+    def get_url(self):
+        self.url = generate_urn(self.tipo_atto, date=self.data, act_number=self.numero_atto, article=self.numero_articolo)
+        return self.url
 
 class NormaScraperApp:
     def __init__(self, root):
@@ -201,7 +206,11 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
         # Controlla se la cronologia ha raggiunto la dimensione massima e rimuovi la voce più vecchia
             if len(self.cronologia) >= 50:  # Sostituisci 10 con la dimensione massima desiderata
                 self.cronologia.pop(0)
-            self.cronologia.append(norma)
+            if norma not in self.cronologia:
+                self.cronologia.append(norma)
+            else:
+                pass
+                
 
     def apri_finestra_cronologia(self):
         self.finestra_cronologia = tk.Toplevel(self.root)
