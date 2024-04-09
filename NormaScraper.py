@@ -97,39 +97,12 @@ class NormaScraperApp:
 
 
         # Input fields
+        self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Seleziona o digita il tipo di atto (es. legge, decreto)", 0, 0)
+        act_types = ['costituzione', 'codice civile', 'preleggi', 'codice penale', 'codice di procedura civile', 'codice di procedura penale', 'codice della navigazione', 'codice postale e delle telecomunicazioni', 'codice della strada', 'codice del processo tributario', 'codice in materia di protezione dei dati personali', 'codice delle comunicazioni elettroniche', 'codice dei beni culturali e del paesaggio', 'codice della proprietà industriale', "codice dell'amministrazione digitale", 'codice della nautica da diporto', 'codice del consumo', 'codice delle assicurazioni private', 'norme in materia ambientale', 'codice dei contratti pubblici', 'codice delle pari opportunità', "codice dell'ordinamento militare", 'codice del processo amministrativo', 'codice del turismo', 'codice antimafia', 'codice di giustizia contabile', 'codice del terzo settore', 'codice della protezione civile', "codice della crisi d'impresa e dell'insolvenza"]
+        self.act_type_combobox = ttk.Combobox(self.mainframe, values=act_types, font=('Helvetica', 15))
+        self.act_type_combobox.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=2, pady=2)
+        self.act_type_combobox.set("Seleziona il tipo di atto")
         
-        self.act_type_entry = self.create_labeled_entry("Tipo atto:", """
-Inserisci il tipo di atto generico (legge, decreto-legge, decreto legislativo) o un atto specifico tra quelli elencati (o una sua abbraviazione): 
-Costituzione (costituzione, cost, cost., c.)
-Codice Civile (cc, c.c., codice civile, cod. civ., disp. att. c.c.)
-Preleggi (disp. prel., preleggi, prel.)
-Codice Penale (cp, c.p., cod. pen.)
-Codice di Procedura Civile (cpc, c.p.c., cod. proc. civ., disp. att. c.p.c.)
-Codice di Procedura Penale (cpp, c.p.p., cod. proc. pen.)
-Codice della Navigazione (cn, cod. nav.)
-Codice Postale e delle Telecomunicazioni (cpet, cod. post. telecom.)
-Codice della Strada (cds, cod. strada)
-Codice del Processo Tributario (cpt, cod. proc. trib.)
-Codice in Materia di Protezione dei Dati Personali (cpd, cod. prot. dati)
-Codice delle Comunicazioni Elettroniche (cce, cod. com. elet.)
-Codice dei Beni Culturali e del Paesaggio (cbc, cod. beni cult.)
-Codice della Proprietà Industriale (cpi, cod. prop. ind.)
-Codice dell'Amministrazione Digitale (cad, cod. amm. dig.)
-Codice della Nautica da Diporto (cnd, cod. naut. diport.)
-Codice del Consumo (cdc, cod. consumo)
-Codice delle Assicurazioni Private (cap, cod. ass. priv.)
-Norme in Materia Ambientale (camb, norme amb.)
-Codice dei Contratti Pubblici (ccp, cod. contr. pubb.)
-Codice delle Pari Opportunità (cpo, cod. pari opp.)
-Codice dell'Ordinamento Militare (com, cod. ord. mil.)
-Codice del Processo Amministrativo (cpa, cod. proc. amm.)
-Codice del Turismo (ctu, cod. turismo)
-Codice Antimafia (cam, cod. antimafia)
-Codice di Giustizia Contabile (cgco, cod. giust. cont.)
-Codice del Terzo Settore (cts, cod. ter. sett.)
-Codice della Protezione Civile (cdpc, cod. prot. civ.)
-Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
- """, 0, 0)
         self.date_entry = self.create_labeled_entry("Data:", "Inserisci la data in formato YYYY-MM-DD, per esteso o solo anno (inserire solo l'anno comporterà un caricamento più lungo)", 1, 0)
         self.act_number_entry = self.create_labeled_entry("Numero atto:", "Inserisci il numero dell'atto (obbligatorio se il tipo di atto è generico)", 2, 0)
         self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo, con eventuale estensione con trattino (-bis, -tris etc...)", 3, 0)
@@ -253,8 +226,8 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
 
     def ripeti_ricerca_selezionata(self, norma):
         if norma:
-            self.act_type_entry.delete(0, tk.END)
-            self.act_type_entry.insert(0, norma.tipo_atto)
+            self.act_type_combobox.delete(0, tk.END)
+            self.act_type_combobox.insert(0, norma.tipo_atto)
 
             self.date_entry.delete(0, tk.END)
             self.date_entry.insert(0, norma.data)
@@ -270,7 +243,7 @@ Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)
 # OUTPUT
 #
     def fetch_act_data(self, save_xml_path=None):
-        act_type = self.act_type_entry.get()
+        act_type = self.act_type_combobox.get()  
         date = self.date_entry.get()
         act_number = self.act_number_entry.get()
         article = self.article_entry.get()
