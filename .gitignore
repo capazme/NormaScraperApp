@@ -2,3 +2,4 @@ old\ version
 .DS_Store
 build.sh
 *.app
+__pycache__

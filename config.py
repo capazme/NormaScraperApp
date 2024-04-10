@@ -95,4 +95,44 @@ class ConfigurazioneDialog(tk.Toplevel):
         with open('resources/configurazione.yaml', 'w') as file:
             yaml.dump(configurazioni, file, default_flow_style=False)
         self.destroy()
-        
+
+class AutoUpdater:
+    def __init__(self, repo_url, app_directory, build_command, main_app_script=None):
+        self.repo_url = repo_url
+        self.app_directory = app_directory
+        self.build_command = build_command
+        self.main_app_script = main_app_script if main_app_script else ""
+
+    def fetch_latest_tag(self):
+        repo = Repo.clone_from(self.repo_url, tempfile.mkdtemp())
+        tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+        latest_tag = tags[-1] if tags else None
+        return latest_tag
+
+    def is_update_available(self):
+        current_version = self.get_current_version()
+        latest_tag = self.fetch_latest_tag()
+        if latest_tag and (latest_tag.name != current_version):
+            return True, latest_tag.name
+        return False, None
+
+    def get_current_version(self):
+        try:
+            with open(os.path.join(self.app_directory, 'version.txt'), 'r') as version_file:
+                return version_file.read().strip()
+        except FileNotFoundError:
+            return '0.0.0'
+
+    def apply_update(self, latest_version):
+        temp_dir = tempfile.mkdtemp()
+        Repo.clone_from(self.repo_url, temp_dir, branch=latest_version)
+        subprocess.check_call(self.build_command, cwd=temp_dir, shell=True)
+        # Copia l'eseguibile aggiornato e il nuovo file version.txt
+        # Assicurati che queste operazioni siano atomiche e gestisci i permessi di file se necessario
+        # Il codice specifico dipende dalla struttura del progetto e dalla piattaforma
+
+        self.restart_app()
+
+    def restart_app(self):
+        python = sys.executable
+        os.execl(python, python, self.main_app_script)

@@ -16,49 +16,6 @@ import subprocess
 
 CURRENT_APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
-class AutoUpdater:
-    def __init__(self, repo_url, app_directory, build_command, main_app_script=None):
-        self.repo_url = repo_url
-        self.app_directory = app_directory
-        self.build_command = build_command
-        self.main_app_script = main_app_script if main_app_script else ""
-
-    def fetch_latest_tag(self):
-        repo = Repo.clone_from(self.repo_url, tempfile.mkdtemp())
-        tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-        latest_tag = tags[-1] if tags else None
-        return latest_tag
-
-    def is_update_available(self):
-        current_version = self.get_current_version()
-        latest_tag = self.fetch_latest_tag()
-        if latest_tag and (latest_tag.name != current_version):
-            return True, latest_tag.name
-        return False, None
-
-    def get_current_version(self):
-        try:
-            with open(os.path.join(self.app_directory, 'version.txt'), 'r') as version_file:
-                return version_file.read().strip()
-        except FileNotFoundError:
-            return '0.0.0'
-
-    def apply_update(self, latest_version):
-        temp_dir = tempfile.mkdtemp()
-        Repo.clone_from(self.repo_url, temp_dir, branch=latest_version)
-        subprocess.check_call(self.build_command, cwd=temp_dir, shell=True)
-        # Copia l'eseguibile aggiornato e il nuovo file version.txt
-        # Assicurati che queste operazioni siano atomiche e gestisci i permessi di file se necessario
-        # Il codice specifico dipende dalla struttura del progetto e dalla piattaforma
-
-        self.restart_app()
-
-    def restart_app(self):
-        python = sys.executable
-        os.execl(python, python, self.main_app_script)
-
-
-
 class Tooltip:
     def __init__(self, widget, text):
         self.widget = widget
@@ -86,130 +43,217 @@ class Tooltip:
 
 
 class NormaScraperApp:
+#
+# SETUP
+#
     def __init__(self, root):
         self.root = root
-        self.root.title("NormaScraper - Beta")
-        self.font_size = 15  # Imposta la dimensione iniziale del font
-        self.font_size_min = 10  # Dimensione minima del font
-        self.font_size_max = 30
-        self.root.bind('<Control-o>', lambda event: self.increase_text_size())
-        self.root.bind('<Control-i>', lambda event: self.decrease_text_size())
-        self.root.bind('<Control-r>', lambda event: self.restart_app())
-        self.root.bind('<Control-0>', lambda event: self.apply_high_contrast_theme())
-        self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
-        self.root.bind('<Control-p>', lambda event: self.apri_configurazione())
-        self.root.bind('<Control-q>', lambda event: self.on_exit())
-        self.root.bind('<Return>', lambda event: self.fetch_act_data())
-        self.root.bind('<Control-t>', lambda event: self.apri_finestra_cronologia())
-        self.root.bind('<Control-h>', lambda event: self.apri_finestra_readme())
-        self.root.bind('<Control-z>', lambda event: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry], self.act_type_combobox))
+        self.configure_root()
+        self.define_variables()
+        self.bind_root_events()
         self.setup_style()
-        self.create_menu()
         self.create_widgets()
+        self.create_menu()
         self.cronologia = []
         self.finestra_cronologia = None
         self.finestra_readme = None
-        #self.updater = AutoUpdater(
-        #    repo_url='https://github.com/capazme/NormaScraperApp.git',
-        #    app_directory=os.path.dirname(os.path.abspath(sys.argv[0])),
-        #    build_command='pyinstaller -c -F -i resources/icon.icns --onefile NormaScraper.py'
-        #)
+        # self.updater = self.configure_updater()  # Uncomment and configure if updater is used
 
-        #print(self.updater.app_directory)
+    def configure_root(self):
+        self.root.title("NormaScraper - Beta")
 
+    def define_variables(self):
+        self.font_size = 15
+        self.font_size_min = 10
+        self.font_size_max = 30
+        self.finestra_cronologia = None
+        self.finestra_readme = None
+
+    def bind_root_events(self):
+        events = {
+            '<Control-o>': lambda event:self.increase_text_size(),
+            '<Control-i>': lambda event:self.decrease_text_size(),
+            '<Control-r>': lambda event:self.restart_app(),
+            '<Control-0>': lambda event:self.apply_high_contrast_theme(),
+            '<Control-n>': lambda event:self.apply_normal_theme(),
+            '<Control-p>': lambda event:self.apri_configurazione(),
+            '<Control-q>': lambda event:self.on_exit(),
+            '<Return>': lambda event:self.fetch_act_data(),
+            '<Control-t>': lambda event:self.apri_finestra_cronologia(),
+            '<Control-h>': lambda event: self.apri_finestra_readme(),
+            '<Control-z>': lambda event: self.clear_all_fields(
+                [self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry],
+                self.act_type_combobox)
+        }
+        for event, action in events.items():
+            self.root.bind(event, action)
 
 #
-#  STYLE
+# UI
 #
-
     def setup_style(self):
-        self.style = ttk.Style()
-        self.style.theme_use('alt')
-        self.style.configure('TButton', font=('Helvetica', self.font_size), foreground='black', background='white')
-        self.style.configure('TEntry', padding=5, font=('Helvetica', self.font_size))
-        self.style.configure('TLabel', font=('Helvetica', self.font_size))
-        self.style.configure('TRadioButton', font=('Helvetica', self.font_size))
-
-
-#
-#  INPUT
-#
+        style = ttk.Style()
+        style.theme_use('alt')
+        font_configs = ('Helvetica', self.font_size)
+        style.configure('TButton', font=font_configs, foreground='black', background='white')
+        style.configure('TEntry', padding=5, font=font_configs)
+        style.configure('TLabel', font=font_configs)
+        style.configure('TRadioButton', font=font_configs)
 
     def create_widgets(self):
-        # Configura il mainframe
         self.mainframe = ttk.Frame(self.root, padding="3 3 12 12")
+        self.configure_mainframe()
+        self.create_input_widgets()
+        self.create_version_radiobuttons()
+        self.create_operation_buttons()
+        self.create_output_area()
+        self.create_history_buttons()
+
+    def configure_mainframe(self):
         self.mainframe.grid(column=0, row=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
-        
-        # Configura la griglia per espandersi
         for i in range(4):
             self.mainframe.columnconfigure(i, weight=1)
         for i in range(12):
             self.mainframe.rowconfigure(i, weight=1)
+            
+    def create_input_widgets(self):
+        # Create input fields with labels and tooltips if necessary
+        
+        act_type_label = ttk.Label(self.mainframe, text="Tipo atto:")
+        act_type_label.grid(row=0, column=0, sticky=tk.W, padx=2, pady=2)
 
-        # Input fields
-        self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Seleziona o digita il tipo di atto (es. legge, decreto)", 0)
-        
-        act_types = ['legge', 'decreto legge', 'decreto legislativo', 'costituzione', 'codice civile', 'preleggi', 'codice penale', 'codice di procedura civile', 'codice di procedura penale', 'codice della navigazione', 'codice postale e delle telecomunicazioni', 'codice della strada', 'codice del processo tributario', 'codice in materia di protezione dei dati personali', 'codice delle comunicazioni elettroniche', 'codice dei beni culturali e del paesaggio', 'codice della proprietà industriale', "codice dell'amministrazione digitale", 'codice della nautica da diporto', 'codice del consumo', 'codice delle assicurazioni private', 'norme in materia ambientale', 'codice dei contratti pubblici', 'codice delle pari opportunità', "codice dell'ordinamento militare", 'codice del processo amministrativo', 'codice del turismo', 'codice antimafia', 'codice di giustizia contabile', 'codice del terzo settore', 'codice della protezione civile', "codice della crisi d'impresa e dell'insolvenza"]
-        self.act_type_combobox = ttk.Combobox(self.mainframe, values=act_types, font=('Helvetica', 15))
-        self.act_type_combobox.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=2, pady=2)
-        self.act_type_combobox.set("Seleziona il tipo di atto")
-        
+        act_types = [
+            'legge', 'decreto legge', 'decreto legislativo', 'costituzione',
+            'codice civile', 'preleggi', 'codice penale', 'codice di procedura civile',
+            'codice di procedura penale', 'codice della navigazione',
+            'codice postale e delle telecomunicazioni', 'codice della strada',
+            'codice del processo tributario', 'codice in materia di protezione dei dati personali',
+            'codice delle comunicazioni elettroniche', 'codice dei beni culturali e del paesaggio',
+            'codice della proprietà industriale', "codice dell'amministrazione digitale",
+            'codice della nautica da diporto', 'codice del consumo', 'codice delle assicurazioni private',
+            'norme in materia ambientale', 'codice dei contratti pubblici', 'codice delle pari opportunità',
+            "codice dell'ordinamento militare", 'codice del processo amministrativo', 'codice del turismo',
+            'codice antimafia', 'codice di giustizia contabile', 'codice del terzo settore',
+            'codice della protezione civile', "codice della crisi d'impresa e dell'insolvenza"
+        ]
+        self.act_type_var = tk.StringVar()
+        self.act_type_combobox = self.create_combobox(self.mainframe, act_types, "Seleziona il tipo di atto", 0, 1)
+        self.act_type_combobox['state'] = 'normal'
+
+        #self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Seleziona o digita il tipo di atto (es. legge, decreto)", 0)
+
         self.date_entry = self.create_labeled_entry("Data:", "Inserisci la data in formato YYYY-MM-DD, per esteso o solo anno (inserire solo l'anno comporterà un caricamento più lungo)", 1)
         self.act_number_entry = self.create_labeled_entry("Numero atto:", "Inserisci il numero dell'atto (obbligatorio se il tipo di atto è generico)", 2)
+
         self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 3)
-        
-        self.comma_entry = self.create_labeled_entry("Comma:", "Inserisci il comma, con eventuale estensione con trattino (-bis, -tris etc...) ", 5)
+        self.comma_entry = self.create_labeled_entry("Comma:", "Inserisci il comma con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 4)
 
-        # Version radio buttons
-        ttk.Label(self.mainframe, text="Versione:").grid(row=6, column=0, sticky=tk.W)
+        self.version_date_entry = self.create_labeled_entry("Data versione atto (se non originale):", "Inserisci la data di versione dell'atto desiderata (default alla data corrente)", 6)
+
+        # Setup for act_type_combobox, date_entry, act_number_entry, and article_entry goes here
+        
+    def create_version_radiobuttons(self):
+        # Create and layout version radio buttons
+        label = ttk.Label(self.mainframe, text="Versione:")
+        label.grid(row=5, column=0, sticky=tk.W)
         self.version_var = tk.StringVar(value="vigente")
-        ttk.Radiobutton(self.mainframe, text="Originale", variable=self.version_var, value="originale").grid(row=6, column=1, sticky=tk.W)
-        ttk.Radiobutton(self.mainframe, text="Vigente", variable=self.version_var, value="vigente").grid(row=6, column=2, sticky=tk.W)
-        
-       
+        radio_buttons = [
+            ("Originale", "originale"),
+            ("Vigente", "vigente")
+        ]
+        for idx, (text, value) in enumerate(radio_buttons, start=1):
+            button = ttk.Radiobutton(self.mainframe, text=text, variable=self.version_var, value=value)
+            button.grid(row=5, column=idx, sticky=tk.W)
 
-
-        self.version_date_entry = self.create_labeled_entry("Data versione atto (se non originale):", "Inserisci la data di versione dell'atto desiderata (default alla data corrente)", 7)
-
-
-        # Pulsanti
-        fetch_button = ttk.Button(self.mainframe, text="Estrai dati", command=self.fetch_act_data)
-        fetch_button.grid(row=8, column=0, sticky=(tk.W, tk.E), padx=4, pady=4)
-
-        # Pulsante per salvare come XML
-        save_xml_button = ttk.Button(self.mainframe, text="Salva come XML", command=self.save_as_xml)
-        save_xml_button.grid(row=8, column=1, sticky=(tk.W, tk.E), padx=4, pady=4)
-
-        # Pulsante per cancellare i campi di input
-        clear_button = ttk.Button(self.mainframe, text="Cancella (ctrl-z)", command=lambda: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry], self.act_type_combobox))
-        clear_button.grid(row=8, column=2, sticky=(tk.W, tk.E), padx=4, pady=4)
-
-        # Pulsante per copiare il testo
-        copia_button = ttk.Button(self.mainframe, text="Copia Testo", command=self.copia_output)
-        copia_button.grid(row=8, column=3, sticky=(tk.W, tk.E), padx=4, pady=4)
-        self.mainframe.columnconfigure(1, weight=1)
-        
-        # Area di testo scorrevole per l'output
+    def create_operation_buttons(self):
+        # Create operation buttons like "Estrai dati", "Salva come XML", etc.
+        operations = [
+            ("Estrai dati", self.fetch_act_data, 0),
+            ("Salva come XML", self.save_as_xml, 1),
+            ("Cancella", lambda: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.act_type_combobox], self.act_type_combobox), 2),
+            ("Copia Testo", self.copia_output, 3)
+        ]
+        for text, command, column in operations:
+            button = ttk.Button(self.mainframe, text=text, command=command)
+            button.grid(row=8, column=column, sticky=(tk.W, tk.E), padx=4, pady=4)
+            
+    def create_combobox(self, container, values, default_text, row, column, **options):
+            """
+            Crea e restituisce una Combobox configurata.
+            
+            :param container: Il widget contenitore dove inserire la Combobox.
+            :param values: Una lista di valori da mostrare nella Combobox.
+            :param default_text: Il testo predefinito da visualizzare nella Combobox.
+            :param row: La riga del layout grid dove posizionare la Combobox.
+            :param column: La colonna del layout grid dove posizionare la Combobox.
+            :param options: Opzioni aggiuntive per configurare la Combobox.
+            :return: Un'istanza di ttk.Combobox.
+            """
+            combobox = ttk.Combobox(container, values=values, **options)
+            combobox.grid(row=row, column=column, sticky=(tk.W, tk.E), padx=2, pady=2)
+            combobox.set(default_text)
+            return combobox
+    
+    def create_output_area(self):
+        # Create scrolled text area for output
         self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD)
         self.output_text.grid(row=10, column=0, columnspan=4, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
 
-        self.button_cronologia = ttk.Button(self.mainframe, text="Cronologia", command=self.apri_finestra_cronologia)
-        self.button_cronologia.grid(row=11, column=0, sticky="ew")
+    def create_history_buttons(self):
+        # Create buttons related to history operations
+        history_ops = [
+            ("Cronologia", self.apri_finestra_cronologia, 0),
+            ("Salva cronologia", self.salva_cronologia, 2),
+            ("Carica cronologia", self.carica_cronologia, 3)
+        ]
+        for text, command, column in history_ops:
+            button = ttk.Button(self.mainframe, text=text, command=command)
+            button.grid(row=11, column=column, sticky="ew")
+            
+    def create_labeled_entry(self, label, placeholder, row, width = None):
+        ttk.Label(self.mainframe, text=label).grid(row=row, column=0, sticky=tk.W)
+        entry = ttk.Entry(self.mainframe)
+        entry.grid(row=row, column=1, columnspan=2, sticky=(tk.W, tk.E))
+            
+            # Icona tooltip
+        tooltip_icon = ttk.Label(self.mainframe, text="?", font=('Helvetica', 10, 'bold'), background='lightgray', relief='raised', width=width)
+        tooltip_icon.grid(row=row, column=1+2, sticky=tk.W, padx=(2, 0))
+        Tooltip(tooltip_icon, placeholder)  # Associa il tooltip all'icona
+        return entry
+    
+    def increment_entry(self, entry):
+        # Recupera il valore corrente dall'entry specificata, incrementalo e aggiorna l'entry
+        current_value = entry.get()
+        try:
+            # Assicurati che il valore corrente sia un numero intero
+            new_value = int(current_value) + 1
+            entry.delete(0, tk.END)  # Pulisci l'entry
+            entry.insert(0, str(new_value))  # Inserisci il nuovo valore
+        except ValueError:
+            # Se il valore corrente non è un numero, ignoralo o mostra un messaggio di errore
+            pass
 
-        salva_cron = ttk.Button(self.mainframe, text="Salva cronologia", command=self.salva_cronologia)
-        salva_cron.grid(row=11, column=2, sticky="ew")
 
-        carica_cron = ttk.Button(self.mainframe, text="Carica cronologia", command=self.carica_cronologia)
-        carica_cron.grid(row=11, column=3, sticky="ew")
-        self.mainframe.columnconfigure(0, weight=1)
-        self.mainframe.columnconfigure(2, weight=1)
-        self.mainframe.columnconfigure(3, weight=1)
+
+
+#
+# FUNZIONI
+#
+
+    def decrement_entry(self, entry):
+        # Recupera il valore corrente dall'entry specificata, decrementalo e aggiorna l'entry
+        current_value = entry.get()
+        try:
+            # Assicurati che il valore corrente sia un numero intero e non negativo
+            new_value = max(0, int(current_value) - 1)
+            entry.delete(0, tk.END)  # Pulisci l'entry
+            entry.insert(0, str(new_value))  # Inserisci il nuovo valore
+        except ValueError:
+            # Se il valore corrente non è un numero, ignoralo o mostra un messaggio di errore
+            pass
         
-#
-#  FUNCIONS
-#
     def toggle_extension(self):
         """Mostra o nasconde il frame dell'estensione."""
         if self.extension_frame.winfo_viewable():
@@ -217,30 +261,7 @@ class NormaScraperApp:
             self.toggle_extension_btn.config(text="▼")
         else:
             self.extension_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E))
-            self.toggle_extension_btn.config(text="▲")
-            
-    def create_labeled_entry(self, label, placeholder, row):
-        ttk.Label(self.mainframe, text=label).grid(row=row, column=0, sticky=tk.W)
-        entry = ttk.Entry(self.mainframe)
-        entry.grid(row=row, column=1, columnspan=2, sticky=(tk.W, tk.E))
-            
-            # Icona tooltip
-        tooltip_icon = ttk.Label(self.mainframe, text="?", font=('Helvetica', 10, 'bold'), background='lightgray', relief='raised')
-        tooltip_icon.grid(row=row, column=1+2, sticky=tk.W, padx=(2, 0))
-        Tooltip(tooltip_icon, placeholder)  # Associa il tooltip all'icona
-        return entry
-    
-    def create_labeled_entry_(self, label_text, tooltip_text, row, col):
-        ttk.Label(self.mainframe, text=label_text).grid(row=row, column=col, sticky=tk.W)
-        entry = ttk.Entry(self.mainframe)
-        entry.grid(row=row, column=col+1, sticky=(tk.W, tk.E), padx=2, pady=2)
-        
-        # Icona tooltip
-        tooltip_icon = ttk.Label(self.mainframe, text="?", font=('Helvetica', 10, 'bold'), background='lightgray', relief='raised')
-        tooltip_icon.grid(row=row, column=col+2, sticky=tk.W, padx=(2, 0))
-        Tooltip(tooltip_icon, tooltip_text)  # Associa il tooltip all'icona
-        
-        return entry
+            self.toggle_extension_btn.config(text="▲") 
 
     def copia_output(self):
         content = self.output_text.get("1.0", tk.END)
@@ -250,11 +271,20 @@ class NormaScraperApp:
     def apri_url(self, url):
         webbrowser.open_new_tab(url)
 
-    def clear_all_fields(self, entries, combobox=None, combobox_default_value="Seleziona il tipo di atto"):
+    def clear_all_fields(self, entries, comboboxes=None, combobox_default_value="Seleziona il tipo di atto"):
+        # Resetta tutti i campi Entry
         for entry in entries:
             entry.delete(0, tk.END)
-        if combobox is not None:
-            combobox.set(combobox_default_value)
+        
+        # Se è stato fornito un singolo Combobox, lo gestisce come se fosse in una lista
+        if comboboxes is not None and not isinstance(comboboxes, list):
+            comboboxes = [comboboxes]
+        
+        # Resetta tutti i Combobox ai loro valori predefiniti
+        if comboboxes is not None:
+            for combobox in comboboxes:
+                combobox.set(combobox_default_value)
+
 
     def apri_finestra_readme(self):
         if not self.finestra_readme or not self.finestra_readme.winfo_exists():
