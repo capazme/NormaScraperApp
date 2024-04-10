@@ -1,5 +1,3 @@
-
-```
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
 <!--
@@ -32,7 +30,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/capazme/NormaScraperApp">
-    <img src="resources/icon.icns" alt="Logo" width="80" height="80">
+    <img src="resources/logo.png" alt="Logo" width="250" height="250">
   </a>
 
 <h3 align="center">NORMASCRAPER - BETA</h3>
@@ -105,8 +103,6 @@ To get a local copy up and running follow these simple example steps.
 ### Prerequisites
 NESSUN PREREQUISITO per l'app contenuta nel file .zip
 Python e pip sono necessari per costruire dalla fonte
-
-```
 
 ### Installation
 
