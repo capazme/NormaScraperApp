@@ -240,8 +240,8 @@ class NormaScraperApp:
         
         carica_cron = ttk.Button(self.mainframe, text="Carica cronologia", command=self.carica_cronologia)
         carica_cron.grid(row=11, column=3)
-        carica_cron = ttk.Button(self.mainframe, text="configura", command=self.apri_configurazione)
-        carica_cron.grid(row=11, column=4)
+        #carica_cron = ttk.Button(self.mainframe, text="configura", command=self.apri_configurazione)
+        #carica_cron.grid(row=11, column=4)
         
 
 
@@ -411,19 +411,19 @@ class NormaScraperApp:
         #
         self.file_menu = Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="File", menu=self.file_menu)
-        self.file_menu.add_command(label="Restart", command=self.restart_app)
+        self.file_menu.add_command(label="Restart (ctrl+r)", command=self.restart_app)
         self.file_menu.add_separator()
-        self.file_menu.add_command(label="Exit", command=self.on_exit)
+        self.file_menu.add_command(label="Exit (ctrl+q)", command=self.on_exit)
         #
         # Accessibility menu
         #
         
         self.accessibility_menu = Menu(self.menu_bar, tearoff=0)
-        self.accessibility_menu.add_command(label="Increase Text Size", command=self.increase_text_size)
-        self.accessibility_menu.add_command(label="High Contrast", command=self.apply_high_contrast_theme)
+        self.accessibility_menu.add_command(label="Increase Text Size (ctrl+i)", command=self.increase_text_size)
+        self.accessibility_menu.add_command(label="High Contrast (ctrl+h)", command=self.apply_high_contrast_theme)
         self.menu_bar.add_cascade(label="Accessibility", menu=self.accessibility_menu)
-        self.accessibility_menu.add_command(label="Decrease Text Size", command=self.decrease_text_size)
-        self.accessibility_menu.add_command(label="Normal Theme", command=self.apply_normal_theme)
+        self.accessibility_menu.add_command(label="Decrease Text Size (ctrl+o)", command=self.decrease_text_size)
+        self.accessibility_menu.add_command(label="Normal Theme (ctrl+n)", command=self.apply_normal_theme)
         #self.accessibility_menu.add_command(label="Configura", command=self.apri_configurazione)
       
         # Update menu
