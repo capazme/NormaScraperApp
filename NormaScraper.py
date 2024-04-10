@@ -1,6 +1,7 @@
 import tkinter as tk 
 import json
 from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialog
+from tkinter.filedialog import askdirectory
 import webbrowser
 import pyperclip
 from usr import *
@@ -357,27 +358,27 @@ class NormaScraperApp:
     def salva_cronologia(self):
         nome_file = simpledialog.askstring("Salva Cronologia", "Inserisci il nome del file:")
         if nome_file:
-            # Ottiene il percorso della directory corrente dell'applicazione
-            current_app_path = os.path.dirname(os.path.abspath(__file__))
-
-            # Costruisce il percorso alla cartella "usr/cron" partendo dalla directory corrente
-            dir_cronologia = os.path.join(current_app_path, "usr", "cron")
-
-            # Crea le directory se non esistono
-            os.makedirs(dir_cronologia, exist_ok=True)
+            # Chiede all'utente di scegliere la cartella dove salvare
+            cartella_selezionata = askdirectory(title="Seleziona la cartella dove salvare la cronologia")
             
-            # Costruisce il percorso completo dove salvare il file
-            percorso_completo = os.path.join(dir_cronologia, f"{nome_file}.json")
+            if cartella_selezionata:  # Verifica che l'utente abbia selezionato una cartella
+                # Costruisce il percorso completo dove salvare il file
+                percorso_completo = os.path.join(cartella_selezionata, f"{nome_file}.json")
 
-            try:
-                with open(percorso_completo, 'w') as f:
-                    json.dump([n.to_dict() for n in self.cronologia], f, indent=4)
-                messagebox.showinfo("Salvato", "Cronologia salvata in " + percorso_completo)
-            except Exception as e:
-                messagebox.showerror("Errore", f"Non è stato possibile salvare la cronologia: {e}")
+                try:
+                    with open(percorso_completo, 'w') as f:
+                        json.dump([n.to_dict() for n in self.cronologia], f, indent=4)
+                    messagebox.showinfo("Salvato", "Cronologia salvata in " + percorso_completo)
+                except Exception as e:
+                    messagebox.showerror("Errore", f"Non è stato possibile salvare la cronologia: {e}")
+            else:
+                messagebox.showwarning("Annullato", "Salvataggio cronologia annullato.")
+
 
     def carica_cronologia(self):
-        percorso_file = filedialog.askopenfilename(title="Seleziona file cronologia", filetypes=(("JSON files", "*.json"), ("all files", "*.*")))
+        dir_cronologia = os.path.join(CURRENT_APP_PATH, "Resources", "Frameworks", "usr", "cron")
+        
+        percorso_file = filedialog.askopenfilename(title="Seleziona file cronologia", filetypes=(("JSON files", "*.json"), ("all files", "*.*"),), initialdir=dir_cronologia)
         if percorso_file:
             with open(percorso_file, 'r') as f:
                 self.cronologia = [NormaVisitata.from_dict(n) for n in json.load(f)]
