@@ -1,4 +1,5 @@
 import re
+from bs4 import BeautifulSoup
 from tkinter import messagebox
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -9,6 +10,7 @@ from selenium.webdriver.chrome.options import Options
 import requests
 from text_op import estrai_testo_articolo, parse_date, normalize_act_type, estrai_data_da_denominazione, get_annex_from_urn
 from functools import lru_cache
+
 
 class NormaVisitata:
     def __init__(self, tipo_atto, data=None, numero_atto=None, numero_articolo=None, url=None):
@@ -76,6 +78,33 @@ def complete_date(act_type, date, act_number):
     except Exception as e:
         return f"Errore nel completamento della data, inserisci la data completa: {e}" 
 
+
+def xml_to_html(xml_file_path):
+    with open(xml_file_path, 'r', encoding='utf-8') as file:
+        xml_str = file.read()
+
+    soup = BeautifulSoup(xml_str, 'xml')
+    
+    # Inizializzazione dell'HTML con lo stile estratto dal file XML
+    style_content = soup.find('style').string if soup.find('style') else ""
+    html_content = [f'<html><head><style>{style_content}</style></head><body>\n\n\n']
+    
+    # Estrazione ed elaborazione dei tag <articolo>
+    nir = soup.find('NIR')
+    if nir:
+        articoli = nir.find_all('articolo')
+        for articolo in articoli:
+            # Pre-calcolo del testo dell'articolo per evitare l'errore nelle f-string
+            articolo_text = articolo.get_text(separator="\n", strip=True)
+            # Aggiunta dell'articolo all'HTML
+            html_content.append(f'<div class="articolo">\n{articolo_text}\n</div>\n\n')
+    
+    # Chiusura dei tag HTML
+    html_content.append('</body></html>')
+    # Unione dei componenti HTML in una singola stringa
+    return ''.join(html_content)
+
+@lru_cache(maxsize=100)
 def generate_urn(act_type, date=None, act_number=None, article=None, extension=None, version=None, version_date=None):
     """
     Genera un URL per Normattiva basandosi sui parametri forniti.

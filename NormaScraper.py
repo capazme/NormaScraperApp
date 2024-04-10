@@ -4,14 +4,15 @@ from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialo
 import webbrowser
 import pyperclip
 from usr import *
-from sys_op import get_urn_and_extract_data, NormaVisitata
-from text_op import normalize_act_type
+from sys_op import get_urn_and_extract_data, NormaVisitata, xml_to_html
 from config import ConfigurazioneDialog
 import os
+from functools import lru_cache
 import sys
 import tempfile
 import subprocess
-from git import Repo, TagReference
+from pathlib import Path
+#from git import Repo
 
 class AutoUpdater:
     def __init__(self, repo_url, app_directory, build_command, main_app_script=None):
@@ -96,6 +97,7 @@ class NormaScraperApp:
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
         self.root.bind('<Control-p>', lambda event: self.apri_configurazione())
         self.root.bind('<Control-q>', lambda event: self.on_exit())
+        self.root.bind('<Return>', lambda event: self.fetch_act_data())
         self.setup_style()
         self.create_menu()
         self.create_widgets()
@@ -190,9 +192,9 @@ class NormaScraperApp:
         save_xml_button = ttk.Button(self.mainframe, text="Salva come XML", command=self.save_as_xml)
         save_xml_button.grid(row=8, column=1)
         clear_button = ttk.Button(self.mainframe, text="Cancella", command=lambda: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry], self.act_type_combobox))
-        clear_button.grid(row=8, column=2)
+        clear_button.grid(row=8, column=3)
         copia_button = ttk.Button(self.mainframe, text="Copia Testo", command=self.copia_output)
-        copia_button.grid(row=8, column=3)
+        copia_button.grid(row=8, column=4)
 
 
         self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD, width=130, height=30)
@@ -249,6 +251,11 @@ class NormaScraperApp:
         if combobox is not None:
             combobox.set(combobox_default_value)
 
+
+
+#
+# XLM 
+#
     def save_as_xml(self):
         file_path = filedialog.asksaveasfilename(
             title="Salva come XML",
@@ -259,6 +266,7 @@ class NormaScraperApp:
         if file_path:
             self.fetch_act_data(save_xml_path=file_path)
             
+        
 #
 # CRONOLOGIA
 #        
@@ -339,9 +347,6 @@ class NormaScraperApp:
                 messagebox.showinfo("Salvato", "Cronologia salvata in " + percorso_completo)
             except Exception as e:
                 messagebox.showerror("Errore", f"Non è stato possibile salvare la cronologia: {e}")
-
-
-
 
     def carica_cronologia(self):
         percorso_file = filedialog.askopenfilename(title="Seleziona file cronologia", filetypes=(("JSON files", "*.json"), ("all files", "*.*")))
