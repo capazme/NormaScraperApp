@@ -13,6 +13,8 @@ import tempfile
 import subprocess
 #from git import Repo
 
+CURRENT_APP_PATH = os.path.dirname(os.path.abspath(__file__))
+
 class AutoUpdater:
     def __init__(self, repo_url, app_directory, build_command, main_app_script=None):
         self.repo_url = repo_url
@@ -92,16 +94,21 @@ class NormaScraperApp:
         self.root.bind('<Control-i>', lambda event: self.increase_text_size())
         self.root.bind('<Control-o>', lambda event: self.decrease_text_size())
         self.root.bind('<Control-r>', lambda event: self.restart_app())
-        self.root.bind('<Control-h>', lambda event: self.apply_high_contrast_theme())
+        self.root.bind('<Control-0>', lambda event: self.apply_high_contrast_theme())
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
         self.root.bind('<Control-p>', lambda event: self.apri_configurazione())
         self.root.bind('<Control-q>', lambda event: self.on_exit())
         self.root.bind('<Return>', lambda event: self.fetch_act_data())
+        self.root.bind('<Control->', lambda event: self.fetch_act_data())
+        self.root.bind('<Control-t>', lambda event: self.apri_finestra_cronologia())
+        self.root.bind('<Control-h>', lambda event: self.apri_finestra_readme())
+        self.root.bind('<Control-z>', lambda event: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry], self.act_type_combobox))
         self.setup_style()
         self.create_menu()
         self.create_widgets()
         self.cronologia = []
         self.finestra_cronologia = None
+        self.finestra_readme = None
         #self.updater = AutoUpdater(
         #    repo_url='https://github.com/capazme/NormaScraperApp.git',
         #    app_directory=os.path.dirname(os.path.abspath(sys.argv[0])),
@@ -129,50 +136,31 @@ class NormaScraperApp:
 #
 
     def create_widgets(self):
+        # Configura il mainframe
         self.mainframe = ttk.Frame(self.root, padding="3 3 12 12")
         self.mainframe.grid(column=0, row=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        self.root.grid_columnconfigure(0, weight=1)  
-        self.root.grid_rowconfigure(0, weight=1)  
-        self.mainframe.columnconfigure(0, weight=1)  
-        self.mainframe.rowconfigure(10, weight=1)  
-
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+        
+        # Configura la griglia per espandersi
+        for i in range(4):
+            self.mainframe.columnconfigure(i, weight=1)
+        for i in range(12):
+            self.mainframe.rowconfigure(i, weight=1)
 
         # Input fields
-        self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Seleziona o digita il tipo di atto (es. legge, decreto)", 0, 0)
+        self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Seleziona o digita il tipo di atto (es. legge, decreto)", 0)
         
         act_types = ['legge', 'decreto legge', 'decreto legislativo', 'costituzione', 'codice civile', 'preleggi', 'codice penale', 'codice di procedura civile', 'codice di procedura penale', 'codice della navigazione', 'codice postale e delle telecomunicazioni', 'codice della strada', 'codice del processo tributario', 'codice in materia di protezione dei dati personali', 'codice delle comunicazioni elettroniche', 'codice dei beni culturali e del paesaggio', 'codice della proprietà industriale', "codice dell'amministrazione digitale", 'codice della nautica da diporto', 'codice del consumo', 'codice delle assicurazioni private', 'norme in materia ambientale', 'codice dei contratti pubblici', 'codice delle pari opportunità', "codice dell'ordinamento militare", 'codice del processo amministrativo', 'codice del turismo', 'codice antimafia', 'codice di giustizia contabile', 'codice del terzo settore', 'codice della protezione civile', "codice della crisi d'impresa e dell'insolvenza"]
         self.act_type_combobox = ttk.Combobox(self.mainframe, values=act_types, font=('Helvetica', 15))
         self.act_type_combobox.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=2, pady=2)
         self.act_type_combobox.set("Seleziona il tipo di atto")
         
-        self.date_entry = self.create_labeled_entry("Data:", "Inserisci la data in formato YYYY-MM-DD, per esteso o solo anno (inserire solo l'anno comporterà un caricamento più lungo)", 1, 0)
-        self.act_number_entry = self.create_labeled_entry("Numero atto:", "Inserisci il numero dell'atto (obbligatorio se il tipo di atto è generico)", 2, 0)
+        self.date_entry = self.create_labeled_entry("Data:", "Inserisci la data in formato YYYY-MM-DD, per esteso o solo anno (inserire solo l'anno comporterà un caricamento più lungo)", 1)
+        self.act_number_entry = self.create_labeled_entry("Numero atto:", "Inserisci il numero dell'atto (obbligatorio se il tipo di atto è generico)", 2)
+        self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 3)
         
-        self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 3, 0)
-
-        # Pulsante di espansione allineato con l'entry dell'articolo
-        #self.toggle_extension_btn = ttk.Button(self.mainframe, text="▼", command=self.toggle_extension)
-        #self.toggle_extension_btn.grid(row=3, column=3, sticky=tk.W, padx=2)
-        #
-        ## Configurazione per il frame dell'estensione, che verrà mostrato o nascosto
-        #self.extension_frame = ttk.Frame(self.mainframe)
-        #self.extension_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E))
-
-        ## Configura la griglia del frame dell'estensione
-        #self.extension_frame.columnconfigure(0, weight=1)  # Lascia che questa colonna si espanda
-        #self.extension_frame.columnconfigure(1, weight=0)  # Lascia che questa colonna si espanda di più, in modo da spingere l'entry verso destra
-
-        #self.extension_label = ttk.Label(self.extension_frame, text="Estensione:")
-        #self.extension_label.grid(row=0, column=0, sticky=(tk.W), pady=2)
-
-        #self.extension_entry = ttk.Entry(self.extension_frame)
-        #self.extension_entry.grid(row=0, column=1, sticky=(tk.E), ipadx=70, pady=2) 
-
-        #self.extension_frame.grid_forget()  # Inizia con il frame dell'estensione nascosto
-        
-
-        
-        self.comma_entry = self.create_labeled_entry("Comma:", "Inserisci il comma, con eventuale estensione con trattino (-bis, -tris etc...) ", 5, 0)
+        self.comma_entry = self.create_labeled_entry("Comma:", "Inserisci il comma, con eventuale estensione con trattino (-bis, -tris etc...) ", 5)
 
         # Version radio buttons
         ttk.Label(self.mainframe, text="Versione:").grid(row=6, column=0, sticky=tk.W)
@@ -183,35 +171,42 @@ class NormaScraperApp:
        
 
 
-        self.version_date_entry = self.create_labeled_entry("Data versione atto (se non originale):", "Inserisci la data di versione dell'atto desiderata (default alla data corrente)", 7, 0)
+        self.version_date_entry = self.create_labeled_entry("Data versione atto (se non originale):", "Inserisci la data di versione dell'atto desiderata (default alla data corrente)", 7)
 
-        # Buttons
+
+        # Pulsanti
         fetch_button = ttk.Button(self.mainframe, text="Estrai dati", command=self.fetch_act_data)
-        fetch_button.grid(row=8, column=0)
+        fetch_button.grid(row=8, column=0, sticky=(tk.W, tk.E), padx=4, pady=4)
+
+        # Pulsante per salvare come XML
         save_xml_button = ttk.Button(self.mainframe, text="Salva come XML", command=self.save_as_xml)
-        save_xml_button.grid(row=8, column=1)
-        clear_button = ttk.Button(self.mainframe, text="Cancella", command=lambda: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry], self.act_type_combobox))
-        clear_button.grid(row=8, column=3)
+        save_xml_button.grid(row=8, column=1, sticky=(tk.W, tk.E), padx=4, pady=4)
+
+        # Pulsante per cancellare i campi di input
+        clear_button = ttk.Button(self.mainframe, text="Cancella (ctrl-z)", command=lambda: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry], self.act_type_combobox))
+        clear_button.grid(row=8, column=2, sticky=(tk.W, tk.E), padx=4, pady=4)
+
+        # Pulsante per copiare il testo
         copia_button = ttk.Button(self.mainframe, text="Copia Testo", command=self.copia_output)
-        copia_button.grid(row=8, column=4)
-
-
-        self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD, width=130, height=30)
-        self.output_text.grid(row=10, column=0, columnspan=3, pady=10)
+        copia_button.grid(row=8, column=3, sticky=(tk.W, tk.E), padx=4, pady=4)
+        self.mainframe.columnconfigure(1, weight=1)
         
+        # Area di testo scorrevole per l'output
+        self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD)
+        self.output_text.grid(row=10, column=0, columnspan=4, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
+
         self.button_cronologia = ttk.Button(self.mainframe, text="Cronologia", command=self.apri_finestra_cronologia)
         self.button_cronologia.grid(row=11, column=0, sticky="ew")
-        
+
         salva_cron = ttk.Button(self.mainframe, text="Salva cronologia", command=self.salva_cronologia)
-        salva_cron.grid(row=11, column=2)
-        
+        salva_cron.grid(row=11, column=2, sticky="ew")
+
         carica_cron = ttk.Button(self.mainframe, text="Carica cronologia", command=self.carica_cronologia)
-        carica_cron.grid(row=11, column=3)
-        #carica_cron = ttk.Button(self.mainframe, text="configura", command=self.apri_configurazione)
-        #carica_cron.grid(row=11, column=4)
+        carica_cron.grid(row=11, column=3, sticky="ew")
+        self.mainframe.columnconfigure(0, weight=1)
+        self.mainframe.columnconfigure(2, weight=1)
+        self.mainframe.columnconfigure(3, weight=1)
         
-
-
 #
 #  FUNCIONS
 #
@@ -223,8 +218,19 @@ class NormaScraperApp:
         else:
             self.extension_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E))
             self.toggle_extension_btn.config(text="▲")
-
-    def create_labeled_entry(self, label_text, tooltip_text, row, col):
+            
+    def create_labeled_entry(self, label, placeholder, row):
+        ttk.Label(self.mainframe, text=label).grid(row=row, column=0, sticky=tk.W)
+        entry = ttk.Entry(self.mainframe)
+        entry.grid(row=row, column=1, columnspan=2, sticky=(tk.W, tk.E))
+            
+            # Icona tooltip
+        tooltip_icon = ttk.Label(self.mainframe, text="?", font=('Helvetica', 10, 'bold'), background='lightgray', relief='raised')
+        tooltip_icon.grid(row=row, column=1+2, sticky=tk.W, padx=(2, 0))
+        Tooltip(tooltip_icon, placeholder)  # Associa il tooltip all'icona
+        return entry
+    
+    def create_labeled_entry_(self, label_text, tooltip_text, row, col):
         ttk.Label(self.mainframe, text=label_text).grid(row=row, column=col, sticky=tk.W)
         entry = ttk.Entry(self.mainframe)
         entry.grid(row=row, column=col+1, sticky=(tk.W, tk.E), padx=2, pady=2)
@@ -250,7 +256,31 @@ class NormaScraperApp:
         if combobox is not None:
             combobox.set(combobox_default_value)
 
+    def apri_finestra_readme(self):
+        if not self.finestra_readme or not self.finestra_readme.winfo_exists():
+            self.finestra_readme = tk.Toplevel(self.root)
+            self.finestra_readme.title("INFO")
+            self.finestra_readme.geometry("600x400")
 
+            text_area = scrolledtext.ScrolledText(self.finestra_readme, wrap=tk.WORD, width=40, height=10)
+            text_area.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+            text_area.configure(font='TkFixedFont', state='disabled')
+            
+
+            # Costruisce il percorso alla cartella "usr/cron" partendo dalla directory corrente
+            readmepath = os.path.join(CURRENT_APP_PATH, "README.txt")
+            if dir:
+                with open(readmepath, 'r') as file:
+                    readme_content = file.read()
+            else:
+                readme_content = "File README.txt non trovato."
+
+            text_area.configure(state='normal')
+            text_area.insert(tk.INSERT, readme_content)
+            text_area.configure(state='disabled')
+        else:
+            # Porta la finestra secondaria esistente in primo piano
+            self.finestra_readme.lift()
 
 #
 # XLM 
