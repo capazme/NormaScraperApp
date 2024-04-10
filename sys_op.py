@@ -1,4 +1,5 @@
 import re
+from tkinter import messagebox
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
@@ -9,6 +10,41 @@ import requests
 from text_op import estrai_testo_articolo, parse_date, normalize_act_type, estrai_data_da_denominazione, get_annex_from_urn
 from functools import lru_cache
 
+class NormaVisitata:
+    def __init__(self, tipo_atto, data=None, numero_atto=None, numero_articolo=None, url=None):
+        self.tipo_atto = normalize_act_type(tipo_atto)
+        self.data = data if data else ""
+        self.numero_atto = numero_atto if numero_atto else ""
+        self.numero_articolo = numero_articolo if numero_articolo else ""
+        self.url = url if url else ""
+
+    def __str__(self):
+        parts = [self.tipo_atto]
+
+        if self.data:
+            parts.append(self.data)
+
+        if self.numero_atto:
+            parts.append(self.numero_atto)
+
+        if self.numero_articolo:
+            # Aggiunge 'art.' solo se numero_atto o data sono presenti per evitare stringhe tipo "Tipo atto art. Numero"
+            articolo_prefix = "art."
+            parts.append(f"{articolo_prefix} {self.numero_articolo}".strip())
+
+        return " ".join(parts)
+    
+    def get_url(self):
+        self.url = generate_urn(self.tipo_atto, date=self.data, act_number=self.numero_atto, article=self.numero_articolo)
+        return self.url
+    
+    def to_dict(self):
+        return {'tipo_atto': self.tipo_atto, 'data': self.data, 'numero_atto': self.numero_atto, 'numero_articolo': self.numero_articolo, 'url': self.url}
+
+    @staticmethod
+    def from_dict(data):
+        return NormaVisitata(**data)
+    
 def setup_driver():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
@@ -22,11 +58,12 @@ def complete_date(act_type, date, act_number):
         driver = setup_driver()
         driver.get("https://www.normattiva.it/")
         search_box = driver.find_element(By.CSS_SELECTOR, ".form-control.autocomplete.bg-transparent")  # Assicurati che il selettore sia corretto
-        search_criteria = f"{act_type} {act_number} {date}"  # Formatta i criteri di ricerca come preferisci
+        search_criteria = f"{act_type} {act_number} {date}"
         search_box.send_keys(search_criteria)
-        search_box.send_keys(Keys.ENTER)
+        WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"button-3\"]"))).click()
         elemento = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="heading_1"]/p[1]/a')))
         elemento_text = elemento.text
+        #messagebox.showinfo("Completamento data", f'{elemento_text}')
         data_completa = estrai_data_da_denominazione(elemento_text)
         driver.quit()
         return data_completa
@@ -82,13 +119,16 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
     base_url = "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:"
     
     normalized_act_type = normalize_act_type(act_type)
-    
+    #messagebox.showinfo("log", normalized_act_type)
     if act_type in codici_urn:
         urn = codici_urn[act_type]
     else:
         try:
             if re.match(r"^\d{4}$", date) and act_number and isinstance(date, str):
-                full_date = complete_date(act_type=normalized_act_type, date=date, act_number=act_number) 
+                #messagebox.showinfo("log", "ricerca data completa...")
+                act_type_for_search = normalize_act_type(act_type, search=True)
+                #messagebox.showinfo("log", act_type_for_search)
+                full_date = complete_date(act_type=act_type_for_search, date=date, act_number=act_number) 
                 date = full_date
             formatted_date = parse_date(date)
         except ValueError as e:
@@ -117,8 +157,9 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
         if version_date:
             formatted_version_date = parse_date(version_date)
             urn += formatted_version_date
-            
-    return base_url + urn
+    act_type_for_cron = normalize_act_type(act_type, search=True)
+    norma = NormaVisitata(tipo_atto=act_type_for_cron, data=date, numero_atto=act_number, numero_articolo=article, url=base_url+urn)
+    return base_url + urn, norma
 
 @lru_cache(maxsize=100)
 def export_xml(driver, urn, timeout, annex):
@@ -150,9 +191,9 @@ def extract_html_article(urn, article, comma):
 @lru_cache(maxsize=100)
 def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
     
-    normalized_act_type = normalize_act_type(act_type)
+    #normalized_act_type = normalize_act_type(act_type)
     
-    urn = generate_urn(act_type=normalized_act_type, date=date, act_number=act_number, article=article, extension=extension, version=version,version_date=version_date)
+    urn, norma = generate_urn(act_type=act_type, date=date, act_number=act_number, article=article, extension=extension, version=version,version_date=version_date)
     if urn is None:
         print("Errore nella generazione dell'URN.")
         return None
@@ -167,7 +208,7 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
             if save_xml_path:
                 save_xml(xml_data, save_xml_path)
             xml_out = estrai_testo_articolo(xml_data, annesso=annex)
-            return xml_out, urn
+            return xml_out, urn, norma
         except Exception as e:
             print(f"Errore nell'esportazione XML: {e}")
             return None
@@ -176,7 +217,7 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
     else:
         try:
             html_out = extract_html_article(urn, article, comma)
-            return html_out, urn
+            return html_out, urn, norma
         except Exception as e:
             print(f"Errore nell'esportazione HTML: {e}")
             return None

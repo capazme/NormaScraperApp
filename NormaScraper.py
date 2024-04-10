@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialo
 import webbrowser
 import pyperclip
 from usr import *
-from sys_op import get_urn_and_extract_data, generate_urn
+from sys_op import get_urn_and_extract_data, NormaVisitata
 from text_op import normalize_act_type
 from config import ConfigurazioneDialog
 import os
@@ -81,41 +81,7 @@ class Tooltip:
             self.tooltip_window.destroy()
             self.tooltip_window = None
 
-class NormaVisitata:
-    def __init__(self, tipo_atto, data=None, numero_atto=None, numero_articolo=None, url=None):
-        self.tipo_atto = normalize_act_type(tipo_atto)
-        self.data = data if data else ""
-        self.numero_atto = numero_atto if numero_atto else ""
-        self.numero_articolo = numero_articolo if numero_articolo else ""
-        self.url = url if url else ""
 
-    def __str__(self):
-        parts = [self.tipo_atto]
-
-        if self.data:
-            parts.append(self.data)
-
-        if self.numero_atto:
-            parts.append(self.numero_atto)
-
-        if self.numero_articolo:
-            # Aggiunge 'art.' solo se numero_atto o data sono presenti per evitare stringhe tipo "Tipo atto art. Numero"
-            articolo_prefix = "art." if self.numero_atto or self.data else ""
-            parts.append(f"{articolo_prefix} {self.numero_articolo}".strip())
-
-        return " ".join(parts)
-    
-    def get_url(self):
-        self.url = generate_urn(self.tipo_atto, date=self.data, act_number=self.numero_atto, article=self.numero_articolo)
-        return self.url
-    
-    def to_dict(self):
-        return {'tipo_atto': self.tipo_atto, 'data': self.data, 'numero_atto': self.numero_atto, 'numero_articolo': self.numero_articolo, 'url': self.url}
-
-    @staticmethod
-    def from_dict(data):
-        return NormaVisitata(**data)
-    
 class NormaScraperApp:
     def __init__(self, root):
         self.root = root
@@ -134,6 +100,7 @@ class NormaScraperApp:
         self.create_menu()
         self.create_widgets()
         self.cronologia = []
+        self.finestra_cronologia = None
         #self.updater = AutoUpdater(
         #    repo_url='https://github.com/capazme/NormaScraperApp.git',
         #    app_directory=os.path.dirname(os.path.abspath(sys.argv[0])),
@@ -172,7 +139,7 @@ class NormaScraperApp:
         # Input fields
         self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Seleziona o digita il tipo di atto (es. legge, decreto)", 0, 0)
         
-        act_types = ['costituzione', 'codice civile', 'preleggi', 'codice penale', 'codice di procedura civile', 'codice di procedura penale', 'codice della navigazione', 'codice postale e delle telecomunicazioni', 'codice della strada', 'codice del processo tributario', 'codice in materia di protezione dei dati personali', 'codice delle comunicazioni elettroniche', 'codice dei beni culturali e del paesaggio', 'codice della proprietà industriale', "codice dell'amministrazione digitale", 'codice della nautica da diporto', 'codice del consumo', 'codice delle assicurazioni private', 'norme in materia ambientale', 'codice dei contratti pubblici', 'codice delle pari opportunità', "codice dell'ordinamento militare", 'codice del processo amministrativo', 'codice del turismo', 'codice antimafia', 'codice di giustizia contabile', 'codice del terzo settore', 'codice della protezione civile', "codice della crisi d'impresa e dell'insolvenza"]
+        act_types = ['legge', 'decreto legge', 'decreto legislativo', 'costituzione', 'codice civile', 'preleggi', 'codice penale', 'codice di procedura civile', 'codice di procedura penale', 'codice della navigazione', 'codice postale e delle telecomunicazioni', 'codice della strada', 'codice del processo tributario', 'codice in materia di protezione dei dati personali', 'codice delle comunicazioni elettroniche', 'codice dei beni culturali e del paesaggio', 'codice della proprietà industriale', "codice dell'amministrazione digitale", 'codice della nautica da diporto', 'codice del consumo', 'codice delle assicurazioni private', 'norme in materia ambientale', 'codice dei contratti pubblici', 'codice delle pari opportunità', "codice dell'ordinamento militare", 'codice del processo amministrativo', 'codice del turismo', 'codice antimafia', 'codice di giustizia contabile', 'codice del terzo settore', 'codice della protezione civile', "codice della crisi d'impresa e dell'insolvenza"]
         self.act_type_combobox = ttk.Combobox(self.mainframe, values=act_types, font=('Helvetica', 15))
         self.act_type_combobox.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=2, pady=2)
         self.act_type_combobox.set("Seleziona il tipo di atto")
@@ -183,24 +150,24 @@ class NormaScraperApp:
         self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 3, 0)
 
         # Pulsante di espansione allineato con l'entry dell'articolo
-        self.toggle_extension_btn = ttk.Button(self.mainframe, text="▼", command=self.toggle_extension)
-        self.toggle_extension_btn.grid(row=3, column=3, sticky=tk.W, padx=2)
-        
-        # Configurazione per il frame dell'estensione, che verrà mostrato o nascosto
-        self.extension_frame = ttk.Frame(self.mainframe)
-        self.extension_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E))
+        #self.toggle_extension_btn = ttk.Button(self.mainframe, text="▼", command=self.toggle_extension)
+        #self.toggle_extension_btn.grid(row=3, column=3, sticky=tk.W, padx=2)
+        #
+        ## Configurazione per il frame dell'estensione, che verrà mostrato o nascosto
+        #self.extension_frame = ttk.Frame(self.mainframe)
+        #self.extension_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E))
 
-        # Configura la griglia del frame dell'estensione
-        self.extension_frame.columnconfigure(0, weight=1)  # Lascia che questa colonna si espanda
-        self.extension_frame.columnconfigure(1, weight=0)  # Lascia che questa colonna si espanda di più, in modo da spingere l'entry verso destra
+        ## Configura la griglia del frame dell'estensione
+        #self.extension_frame.columnconfigure(0, weight=1)  # Lascia che questa colonna si espanda
+        #self.extension_frame.columnconfigure(1, weight=0)  # Lascia che questa colonna si espanda di più, in modo da spingere l'entry verso destra
 
-        self.extension_label = ttk.Label(self.extension_frame, text="Estensione:")
-        self.extension_label.grid(row=0, column=0, sticky=(tk.W), pady=2)
+        #self.extension_label = ttk.Label(self.extension_frame, text="Estensione:")
+        #self.extension_label.grid(row=0, column=0, sticky=(tk.W), pady=2)
 
-        self.extension_entry = ttk.Entry(self.extension_frame)
-        self.extension_entry.grid(row=0, column=1, sticky=(tk.E), ipadx=70, pady=2) 
+        #self.extension_entry = ttk.Entry(self.extension_frame)
+        #self.extension_entry.grid(row=0, column=1, sticky=(tk.E), ipadx=70, pady=2) 
 
-        self.extension_frame.grid_forget()  # Inizia con il frame dell'estensione nascosto
+        #self.extension_frame.grid_forget()  # Inizia con il frame dell'estensione nascosto
         
 
         
@@ -222,7 +189,7 @@ class NormaScraperApp:
         fetch_button.grid(row=8, column=0)
         save_xml_button = ttk.Button(self.mainframe, text="Salva come XML", command=self.save_as_xml)
         save_xml_button.grid(row=8, column=1)
-        clear_button = ttk.Button(self.mainframe, text="Cancella", command=lambda: self.clear_all_fields([self.act_type_entry, self.date_entry, self.act_number_entry, self.article_entry, self.extension_entry, self.comma_entry, self.version_date_entry]))
+        clear_button = ttk.Button(self.mainframe, text="Cancella", command=lambda: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry], self.act_type_combobox))
         clear_button.grid(row=8, column=2)
         copia_button = ttk.Button(self.mainframe, text="Copia Testo", command=self.copia_output)
         copia_button.grid(row=8, column=3)
@@ -256,7 +223,6 @@ class NormaScraperApp:
             self.extension_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E))
             self.toggle_extension_btn.config(text="▲")
 
-
     def create_labeled_entry(self, label_text, tooltip_text, row, col):
         ttk.Label(self.mainframe, text=label_text).grid(row=row, column=col, sticky=tk.W)
         entry = ttk.Entry(self.mainframe)
@@ -277,9 +243,11 @@ class NormaScraperApp:
     def apri_url(self, url):
         webbrowser.open_new_tab(url)
 
-    def clear_all_fields(self, entries):
+    def clear_all_fields(self, entries, combobox=None, combobox_default_value="Seleziona il tipo di atto"):
         for entry in entries:
             entry.delete(0, tk.END)
+        if combobox is not None:
+            combobox.set(combobox_default_value)
 
     def save_as_xml(self):
         file_path = filedialog.asksaveasfilename(
@@ -302,6 +270,9 @@ class NormaScraperApp:
             self.cronologia.append(norma)
 
     def apri_finestra_cronologia(self):
+        if self.finestra_cronologia:
+            self.finestra_cronologia.destroy()
+            self.finestra_cronologia = None
         self.finestra_cronologia = tk.Toplevel(self.root)
         self.finestra_cronologia.title("Cronologia Ricerche")
         self.finestra_cronologia.geometry("600x400")
@@ -377,17 +348,17 @@ class NormaScraperApp:
         date = self.date_entry.get()
         act_number = self.act_number_entry.get()
         article = self.article_entry.get()
-        extension = self.extension_entry.get()
+        #extension = self.extension_entry.get()
         version = self.version_var.get()
         version_date = self.version_date_entry.get()
         comma = self.comma_entry.get()
         
         try:
-            data, url = get_urn_and_extract_data(act_type, date, act_number, article, extension, comma, version, version_date, save_xml_path=save_xml_path)
+            data, url, norma = get_urn_and_extract_data(act_type=act_type, date=date, act_number=act_number, article=article, comma=comma, version=version, version_date=version_date, save_xml_path=save_xml_path)
             self.output_text.delete('1.0', tk.END)
             self.output_text.insert(tk.END, data)
             self.crea_link("Apri URN Normattiva", url, 9, 1)
-            self.aggiungi_a_cronologia(NormaVisitata(tipo_atto=act_type, data=date, numero_atto=act_number, numero_articolo=article, url=url))
+            self.aggiungi_a_cronologia(norma)
 
         except Exception as e:
             messagebox.showerror("Errore", str(e))
