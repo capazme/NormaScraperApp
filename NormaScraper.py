@@ -4,14 +4,13 @@ from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialo
 import webbrowser
 import pyperclip
 from usr import *
-from sys_op import get_urn_and_extract_data, NormaVisitata, xml_to_html
+from sys_op import get_urn_and_extract_data, NormaVisitata
 from config import ConfigurazioneDialog
 import os
 from functools import lru_cache
 import sys
 import tempfile
 import subprocess
-from pathlib import Path
 #from git import Repo
 
 class AutoUpdater:
