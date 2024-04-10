@@ -12,20 +12,26 @@ from functools import lru_cache
 
 class NormaVisitata:
     def __init__(self, tipo_atto, data=None, numero_atto=None, numero_articolo=None, url=None):
+        self.tipo_atto_str = normalize_act_type(tipo_atto, search=True)
         self.tipo_atto = normalize_act_type(tipo_atto)
         self.data = data if data else ""
         self.numero_atto = numero_atto if numero_atto else ""
         self.numero_articolo = numero_articolo if numero_articolo else ""
-        self.url = url if url else ""
+        if not url:
+            self.url = self.get_url()
+        else:
+            self.url = url
 
     def __str__(self):
-        parts = [self.tipo_atto]
+        parts = [self.tipo_atto_str]
 
         if self.data:
-            parts.append(self.data)
+            date_prefix = "del"
+            parts.append(f"{date_prefix} {self.data}".strip())
 
         if self.numero_atto:
-            parts.append(self.numero_atto)
+            num_prefix = "n."
+            parts.append(f"{num_prefix} {self.numero_atto}".strip())
 
         if self.numero_articolo:
             # Aggiunge 'art.' solo se numero_atto o data sono presenti per evitare stringhe tipo "Tipo atto art. Numero"
