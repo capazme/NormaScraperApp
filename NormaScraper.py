@@ -1,6 +1,6 @@
 import tkinter as tk 
 import json
-from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialog, Toplevel
+from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialog
 import webbrowser
 import pyperclip
 from usr import *
@@ -9,7 +9,6 @@ from text_op import normalize_act_type
 from config import ConfigurazioneDialog
 import os
 import sys
-import threading
 import tempfile
 import subprocess
 from git import Repo, TagReference
