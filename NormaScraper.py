@@ -9,79 +9,53 @@ from text_op import normalize_act_type
 from config import ConfigurazioneDialog
 import os
 import sys
-import git
-import subprocess 
+import threading
+import tempfile
+import subprocess
+from git import Repo, TagReference
 
 class AutoUpdater:
-    def __init__(self, repo_path, pyinstaller_cmd, app):
-        self.repo_path = repo_path
-        self.pyinstaller_cmd = pyinstaller_cmd
-        self.app = app
+    def __init__(self, repo_url, app_directory, build_command, main_app_script=None):
+        self.repo_url = repo_url
+        self.app_directory = app_directory
+        self.build_command = build_command
+        self.main_app_script = main_app_script if main_app_script else ""
 
-    def check_for_updates(self):
-        try:
-            print("Checking for updates...")
-            repo = git.Repo(self.repo_path)
-            current = repo.head.commit
-            repo.remotes.origin.pull()
-            updated = repo.head.commit
-            if current != updated:
-                print("Updates checked. New updates found.")
-                return True
-            else:
-                print("Updates checked. No new updates.")
-                return False
-        except Exception as e:
-            print(f"Error checking for updates: {e}")
-            messagebox.showerror("Errore", f"Impossibile verificare gli aggiornamenti: {e}")
-            return False
+    def fetch_latest_tag(self):
+        repo = Repo.clone_from(self.repo_url, tempfile.mkdtemp())
+        tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+        latest_tag = tags[-1] if tags else None
+        return latest_tag
 
-    def rebuild_app(self):
-        print("Rebuilding the application...")
+    def is_update_available(self):
+        current_version = self.get_current_version()
+        latest_tag = self.fetch_latest_tag()
+        if latest_tag and (latest_tag.name != current_version):
+            return True, latest_tag.name
+        return False, None
+
+    def get_current_version(self):
         try:
-            subprocess.run(self.pyinstaller_cmd, shell=True, check=True)
-            print("Application rebuilt.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error rebuilding the application: {e}")
-            messagebox.showerror("Errore", f"Impossibile ricostruire l'applicazione: {e}")
+            with open(os.path.join(self.app_directory, 'version.txt'), 'r') as version_file:
+                return version_file.read().strip()
+        except FileNotFoundError:
+            return '0.0.0'
+
+    def apply_update(self, latest_version):
+        temp_dir = tempfile.mkdtemp()
+        Repo.clone_from(self.repo_url, temp_dir, branch=latest_version)
+        subprocess.check_call(self.build_command, cwd=temp_dir, shell=True)
+        # Copia l'eseguibile aggiornato e il nuovo file version.txt
+        # Assicurati che queste operazioni siano atomiche e gestisci i permessi di file se necessario
+        # Il codice specifico dipende dalla struttura del progetto e dalla piattaforma
+
+        self.restart_app()
 
     def restart_app(self):
-        print("Restarting the application...")
-        self.app.on_exit()
-        subprocess.run("python " + " ".join(sys.argv), shell=True)
+        python = sys.executable
+        os.execl(python, python, self.main_app_script)
 
-    def get_commit_messages(self):
-        try:
-            print("Getting commit messages...")
-            repo = git.Repo(self.repo_path)
-            origin = repo.remotes.origin
-            origin.fetch()
-            local_commits = list(repo.iter_commits('master..origin/master'))
-            commit_messages = [commit.message.strip() for commit in local_commits]
-            print("Commit messages retrieved:", commit_messages)
-            return commit_messages
-        except Exception as e:
-            print(f"Error getting commit messages: {e}")
-            messagebox.showerror("Errore", f"Impossibile ottenere i messaggi di commit: {e}")
-            return []
 
-    def run(self):
-        print("AutoUpdater started.")
-        if self.check_for_updates():
-            updates_available = self.get_commit_messages()
-            if updates_available:
-                message = "Sono disponibili aggiornamenti:\n\n" + "\n".join(updates_available)
-                if messagebox.askyesno("Aggiornamenti disponibili", message + "\n\nVuoi aggiornare l'applicazione?"):
-                    self.rebuild_app()
-                    self.restart_app()
-                    messagebox.showinfo("Aggiornamento completato", "L'applicazione è stata aggiornata con successo.")
-                else:
-                    messagebox.showinfo("Aggiornamenti ignorati", "L'applicazione non è stata aggiornata.")
-            else:
-                print("No new updates available.")
-                messagebox.showinfo("Nessun aggiornamento", "Non ci sono aggiornamenti disponibili.")
-        else:
-            messagebox.showinfo("Nessun aggiornamento", "Non ci sono aggiornamenti disponibili.")
 
 class Tooltip:
     def __init__(self, widget, text):
@@ -161,11 +135,13 @@ class NormaScraperApp:
         self.create_menu()
         self.create_widgets()
         self.cronologia = []
-        self.updater = AutoUpdater(
-            repo_path='https://github.com/capazme/NormaScraperApp.git',
-            pyinstaller_cmd='pyinstaller -c -F -i resources/icon.icns --onefile NormaScraper.py',
-            app=self
-        )
+        #self.updater = AutoUpdater(
+        #    repo_url='https://github.com/capazme/NormaScraperApp.git',
+        #    app_directory=os.path.dirname(os.path.abspath(sys.argv[0])),
+        #    build_command='pyinstaller -c -F -i resources/icon.icns --onefile NormaScraper.py'
+        #)
+
+        #print(self.updater.app_directory)
 
 
 #
@@ -388,7 +364,6 @@ class NormaScraperApp:
             messagebox.showinfo("Caricato", "Cronologia caricata con successo")
             self.apri_finestra_cronologia()
  
-
     def cancella_cronologia(self):
         # Pulisce la cronologia
         self.cronologia.clear()
@@ -435,9 +410,10 @@ class NormaScraperApp:
         # File menu
         #
         self.file_menu = Menu(self.menu_bar, tearoff=0)
-        self.file_menu.add_command(label="Exit", command=self.on_exit)
         self.menu_bar.add_cascade(label="File", menu=self.file_menu)
-        
+        self.file_menu.add_command(label="Restart", command=self.restart_app)
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label="Exit", command=self.on_exit)
         #
         # Accessibility menu
         #
@@ -449,10 +425,32 @@ class NormaScraperApp:
         self.accessibility_menu.add_command(label="Decrease Text Size", command=self.decrease_text_size)
         self.accessibility_menu.add_command(label="Normal Theme", command=self.apply_normal_theme)
         #self.accessibility_menu.add_command(label="Configura", command=self.apri_configurazione)
-        self.file_menu.add_command(label="Restart", command=self.restart_app)
-        self.file_menu.add_separator()
-        self.file_menu.add_command(label="Check for Updates", command=self.check_for_updates)
-        self.file_menu.add_command(label="Exit", command=self.on_exit)
+      
+        # Update menu
+        #self.update_menu = tk.Menu(self.menu_bar, tearoff=0)
+        #self.update_menu.add_command(label="Check for Updates", command=self.user_initiated_update)
+        #self.menu_bar.add_cascade(label="Update", menu=self.update_menu)
+
+        
+    #def user_initiated_update(self):
+    #    """Controlla gli aggiornamenti in un thread separato."""
+    #    update_thread = threading.Thread(target=self.check_and_apply_update, daemon=True)
+    #    update_thread.start()
+
+    #def check_and_apply_update(self):
+    #    is_available, latest_version = self.updater.is_update_available()
+    #    if is_available:
+    #        self.prompt_for_update(latest_version)
+
+    #def prompt_for_update(self, latest_version):
+    #    """Chiede all'utente se desidera applicare l'aggiornamento."""
+    #    # Usa self.root.after per eseguire questa operazione nel thread dell'UI
+    #    self.root.after(0, lambda: self.ask_to_update(latest_version))
+ 
+    #def ask_to_update(self, latest_version):
+    #    response = messagebox.askyesno("Aggiornamento Disponibile", f"È disponibile un nuovo aggiornamento alla versione {latest_version}. Vuoi applicarlo ora?")
+    #    if response:
+    #        self.updater.apply_update(latest_version)
 
     def apri_configurazione(self):
         ConfigurazioneDialog(self.root)
@@ -488,8 +486,8 @@ class NormaScraperApp:
         self.style.configure('TButton', background='black', foreground='white')
         # Apply high contrast configurations to other widgets as needed
 
-    def check_for_updates(self):
-        self.updater.run()
+    #def check_for_updates(self):
+    #    self.updater.check_and_update()
 
 if __name__ == "__main__":
     root = tk.Tk()
