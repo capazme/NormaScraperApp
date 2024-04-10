@@ -91,15 +91,14 @@ class NormaScraperApp:
         self.font_size = 15  # Imposta la dimensione iniziale del font
         self.font_size_min = 10  # Dimensione minima del font
         self.font_size_max = 30
-        self.root.bind('<Control-i>', lambda event: self.increase_text_size())
-        self.root.bind('<Control-o>', lambda event: self.decrease_text_size())
+        self.root.bind('<Control-o>', lambda event: self.increase_text_size())
+        self.root.bind('<Control-i>', lambda event: self.decrease_text_size())
         self.root.bind('<Control-r>', lambda event: self.restart_app())
         self.root.bind('<Control-0>', lambda event: self.apply_high_contrast_theme())
         self.root.bind('<Control-n>', lambda event: self.apply_normal_theme())
         self.root.bind('<Control-p>', lambda event: self.apri_configurazione())
         self.root.bind('<Control-q>', lambda event: self.on_exit())
         self.root.bind('<Return>', lambda event: self.fetch_act_data())
-        self.root.bind('<Control->', lambda event: self.fetch_act_data())
         self.root.bind('<Control-t>', lambda event: self.apri_finestra_cronologia())
         self.root.bind('<Control-h>', lambda event: self.apri_finestra_readme())
         self.root.bind('<Control-z>', lambda event: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry], self.act_type_combobox))
@@ -441,6 +440,7 @@ class NormaScraperApp:
         
         self.accessibility_menu = Menu(self.menu_bar, tearoff=0)
         self.accessibility_menu.add_command(label="Increase Text Size (ctrl+i)", command=self.increase_text_size)
+        self.accessibility_menu.add_command(label="HELP (ctrl+h)", command=self.apri_finestra_readme)
         self.accessibility_menu.add_command(label="High Contrast (ctrl+h)", command=self.apply_high_contrast_theme)
         self.menu_bar.add_cascade(label="Accessibility", menu=self.accessibility_menu)
         self.accessibility_menu.add_command(label="Decrease Text Size (ctrl+o)", command=self.decrease_text_size)
