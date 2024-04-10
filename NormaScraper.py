@@ -148,6 +148,12 @@ class NormaScraperApp:
         self.act_number_entry = self.create_labeled_entry("Numero atto:", "Inserisci il numero dell'atto (obbligatorio se il tipo di atto è generico)", 2)
 
         self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 3)
+         # Bottoni per incrementare e decrementare il valore
+        increment_button = ttk.Button(self.mainframe, text="▲", command=lambda: self.increment_entry(self.article_entry), width = 3) 
+        increment_button.grid(row=3, column=3, padx=(0,1), sticky=(tk.E))  # Riduci lo spazio tra i pulsanti con padx
+        decrement_button = ttk.Button(self.mainframe, text="▼", command=lambda: self.decrement_entry(self.article_entry), width = 3)
+        decrement_button.grid(row=3, column=4, padx=(0,1), sticky=(tk.E))
+
         self.comma_entry = self.create_labeled_entry("Comma:", "Inserisci il comma con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 4)
 
         self.version_date_entry = self.create_labeled_entry("Data versione atto (se non originale):", "Inserisci la data di versione dell'atto desiderata (default alla data corrente)", 6)
@@ -223,17 +229,7 @@ class NormaScraperApp:
         Tooltip(tooltip_icon, placeholder)  # Associa il tooltip all'icona
         return entry
     
-    def increment_entry(self, entry):
-        # Recupera il valore corrente dall'entry specificata, incrementalo e aggiorna l'entry
-        current_value = entry.get()
-        try:
-            # Assicurati che il valore corrente sia un numero intero
-            new_value = int(current_value) + 1
-            entry.delete(0, tk.END)  # Pulisci l'entry
-            entry.insert(0, str(new_value))  # Inserisci il nuovo valore
-        except ValueError:
-            # Se il valore corrente non è un numero, ignoralo o mostra un messaggio di errore
-            pass
+
 
 
 
@@ -241,18 +237,38 @@ class NormaScraperApp:
 #
 # FUNZIONI
 #
-
-    def decrement_entry(self, entry):
-        # Recupera il valore corrente dall'entry specificata, decrementalo e aggiorna l'entry
+    
+    def increment_entry(self, entry):
         current_value = entry.get()
         try:
-            # Assicurati che il valore corrente sia un numero intero e non negativo
-            new_value = max(0, int(current_value) - 1)
-            entry.delete(0, tk.END)  # Pulisci l'entry
-            entry.insert(0, str(new_value))  # Inserisci il nuovo valore
+            new_value = int(current_value) + 1 if current_value.isdigit() else 1
+            entry.delete(0, tk.END)
+            entry.insert(0, str(new_value))
         except ValueError:
-            # Se il valore corrente non è un numero, ignoralo o mostra un messaggio di errore
-            pass
+            # Se il valore corrente non è un numero, imposta a 1
+            entry.delete(0, tk.END)
+            entry.insert(0, '1')
+
+        # Chiamare fetch_act_data solo se il Combobox ha un valore valido e non è il default
+        if self.act_type_combobox.get() != "Seleziona il tipo di atto":
+            self.fetch_act_data()
+
+    def decrement_entry(self, entry):
+        current_value = entry.get()
+        try:
+            new_value = max(1, int(current_value) - 1) if current_value.isdigit() else 1
+            entry.delete(0, tk.END)
+            entry.insert(0, str(new_value))
+        except ValueError:
+            # Se il valore corrente non è un numero, imposta a 1
+            entry.delete(0, tk.END)
+            entry.insert(0, '1')
+
+        # Chiamare fetch_act_data solo se il Combobox ha un valore valido e non è il default
+        if self.act_type_combobox.get() != "Seleziona il tipo di atto":
+            self.fetch_act_data()
+
+
         
     def toggle_extension(self):
         """Mostra o nasconde il frame dell'estensione."""
@@ -284,7 +300,6 @@ class NormaScraperApp:
         if comboboxes is not None:
             for combobox in comboboxes:
                 combobox.set(combobox_default_value)
-
 
     def apri_finestra_readme(self):
         if not self.finestra_readme or not self.finestra_readme.winfo_exists():
