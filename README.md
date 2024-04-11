@@ -38,7 +38,7 @@
 <h3 align="center">NORMASCRAPER - BETA</h3>
 
 <p align="center">
-    Semplice interfaccia per accedere programmaticamente al portale delle leggi italiano Normattiva
+    Semplice interfaccia per accedere al sito del governo italiano Normattiva
     <br />
     <br />
     <br />
@@ -129,11 +129,11 @@ To get a local copy up and running follow these simple example steps.
   <a href="https://github.com/capazme/NormaScraperApp">
     <img src="resources/screen.png" width="500" height="400">
   </a>
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#readme-top">back to top</a>)</p> </div>
 
-# Spec
+## Spec
 
-#### get_urn_and_extract_data()
+## get_urn_and_extract_data()
 
 La funzione get_urn_and_extract_data è progettata per interrogare il sito Normattiva, utilizzando **l'URN** (Uniform Resource Name) per identificare specifici atti legislativi. Una volta ottenuto l'accesso all'atto desiderato, la funzione estrae dati rilevanti che possono includere testo dell'atto, date di promulgazione, modifiche successive, e altro ancora. I parametri principali della funzione includono:
 
@@ -171,8 +171,7 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
     * Codice della Protezione Civile (cdpc, cod. prot. civ.)
     * Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)"
     * date (str, optional): La data di pubblicazione dell'atto in formato YYYY-MM-DD.
-* **act_number** (str, optional): Il numero dell'atto legislativo.
-* , come "-bis" o "-ter".)
+* **act_number** (str, optional): Il numero dell'atto legislativo e la sua espansione (come "-bis" o "-ter")
 * **version** (str, optional): Indica se l'atto è nella versione "originale" o "vigente".
 * **version_date** (str, optional): La data della versione dell'atto in formato YYYY-MM-DD.
 
@@ -187,6 +186,7 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
     - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
 - [ ] Altalex implementation
     - [ ] Altalexpedia
+- [ ] 
 
 See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a full list of proposed features (and known issues).
 
