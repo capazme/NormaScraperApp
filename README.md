@@ -238,7 +238,7 @@ Project Link: [https://github.com/capazme/NormaScraperApp](https://github.com/ca
 [issues-shield]: https://img.shields.io/github/issues/capazme/NormaScraperApp.svg?style=for-the-badge
 [issues-url]: https://github.com/capazme/NormaScraperApp/issues
 [license-shield]: https://img.shields.io/github/license/capazme/NormaScraperApp.svg?style=for-the-badge
-[license-url]: https://github.com/capazme/NormaScraperApp/blob/master/LICENSE.txt
+[license-url]: https://github.com/capazme/NormaScraperApp/blob/master/.LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [product-screenshot]: resources/screen.png
 [contributors-shield]: https://img.shields.io/github/contributors/capazme/NormaScraperApp.svg?style=for-the-badge
