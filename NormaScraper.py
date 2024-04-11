@@ -1,6 +1,8 @@
-import tkinter as tk 
+import ttkbootstrap as ttkb
+from ttkbootstrap.constants import *
 import json
-from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialog, Toplevel
+import tkinter as tk
+from tkinter import messagebox, scrolledtext, filedialog, Menu, simpledialog, Toplevel, StringVar
 from tkinter.filedialog import askdirectory
 import webbrowser
 import pyperclip
@@ -12,29 +14,32 @@ import sys
 CURRENT_APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
 class Tooltip:
+    """
+    Create a tooltip for a given widget.
+    """
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
-        self.tooltip_window = None
-        self.widget.bind("<Enter>", self.show_tooltip)
-        self.widget.bind("<Leave>", self.hide_tooltip)
-    
-    def show_tooltip(self, event=None):
-        if self.tooltip_window:
-            return
-        x, y, _, _ = self.widget.bbox("insert")
-        x += self.widget.winfo_rootx() + 20
-        y += self.widget.winfo_rooty() + 20
-        self.tooltip_window = tk.Toplevel(self.widget)
-        self.tooltip_window.wm_overrideredirect(True)
-        self.tooltip_window.wm_geometry("+%d+%d" % (x, y))
-        label = tk.Label(self.tooltip_window, text=self.text, background="lightyellow", borderwidth=1, relief="solid")
-        label.pack(ipadx=1, ipady=1)
-    
-    def hide_tooltip(self, event=None):
-        if self.tooltip_window:
-            self.tooltip_window.destroy()
-            self.tooltip_window = None
+        self.tip_window = None
+
+    def show_tooltip(self, event):
+        x, y, cx, cy = self.widget.bbox("insert")   # Get the bounding box of the widget
+        x += self.widget.winfo_rootx() + 25         # Calculate to display tooltip right of the widget
+        y += self.widget.winfo_rooty() + 20         # Calculate to display tooltip below the widget
+        # Create a toplevel window with required properties
+        self.tip_window = tk.Toplevel(self.widget)
+        self.tip_window.wm_overrideredirect(True)   # Remove window decorations
+        self.tip_window.wm_geometry(f"+{x}+{y}")    # Position the tooltip
+        label = ttkb.Label(self.tip_window, text=self.text, background="lightyellow", relief='solid', borderwidth=1, wraplength=200)
+        label.pack(ipadx=2, ipady=2)
+
+    def hide_tooltip(self, event):
+        if self.tip_window:
+            self.tip_window.destroy()
+            self.tip_window = None
+
+
+
 
 
 class NormaScraperApp:
@@ -87,16 +92,16 @@ class NormaScraperApp:
 # UI
 #
     def setup_style(self):
-        style = ttk.Style()
-        style.theme_use('alt')
+        style = ttkb.Style()
+        style.theme_use('flatly')  # Change theme here if needed
         font_configs = ('Helvetica', self.font_size)
-        style.configure('TButton', font=font_configs, foreground='black', background='white')
+        style.configure('TButton', font=font_configs)
         style.configure('TEntry', padding=5, font=font_configs)
         style.configure('TLabel', font=font_configs)
-        style.configure('TRadioButton', font=font_configs)
+        style.configure('TRadiobutton', font=font_configs)
 
     def create_widgets(self):
-        self.mainframe = ttk.Frame(self.root, padding="3 3 12 12")
+        self.mainframe = ttkb.Frame(self.root, padding="3 3 12 12")
         self.configure_mainframe()
         self.create_input_widgets()
         self.create_version_radiobuttons()
@@ -116,7 +121,7 @@ class NormaScraperApp:
     def create_input_widgets(self):
         # Create input fields with labels and tooltips if necessary
         
-        act_type_label = ttk.Label(self.mainframe, text="Tipo atto:")
+        act_type_label = ttkb.Label(self.mainframe, text="Tipo atto:", bootstyle=INFO)
         act_type_label.grid(row=0, column=0, sticky=tk.W, padx=2, pady=2)
 
         act_types = [
@@ -134,7 +139,7 @@ class NormaScraperApp:
             'codice della protezione civile', "codice della crisi d'impresa e dell'insolvenza"
         ]
         self.act_type_var = tk.StringVar()
-        self.act_type_combobox = self.create_combobox(self.mainframe, act_types, "Seleziona il tipo di atto", 0, 1)
+        self.act_type_combobox = self.create_combobox(self.mainframe, act_types, "Select", 0, 1)
         self.act_type_combobox['state'] = 'normal'
 
         #self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Seleziona o digita il tipo di atto (es. legge, decreto)", 0)
@@ -142,31 +147,20 @@ class NormaScraperApp:
         self.date_entry = self.create_labeled_entry("Data:", "Inserisci la data in formato YYYY-MM-DD, per esteso o solo anno (inserire solo l'anno comporterà un caricamento più lungo)", 1)
         self.act_number_entry = self.create_labeled_entry("Numero atto:", "Inserisci il numero dell'atto (obbligatorio se il tipo di atto è generico)", 2)
 
-        self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 3)
+        self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 3, increment=True)
          # Bottoni per incrementare e decrementare il valore
-        increment_button = ttk.Button(self.mainframe, text="▲", command=lambda: self.increment_entry(self.article_entry), width = 3) 
-        increment_button.grid(row=3, column=3, padx=(0,1), sticky=(tk.E))  # Riduci lo spazio tra i pulsanti con padx
-        decrement_button = ttk.Button(self.mainframe, text="▼", command=lambda: self.decrement_entry(self.article_entry), width = 3)
-        decrement_button.grid(row=3, column=4, padx=(0,1), sticky=(tk.E))
-
         self.comma_entry = self.create_labeled_entry("Comma:", "Inserisci il comma con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 4)
 
         self.version_date_entry = self.create_labeled_entry("Data versione atto (se non originale):", "Inserisci la data di versione dell'atto desiderata (default alla data corrente)", 6)
 
         # Setup for act_type_combobox, date_entry, act_number_entry, and article_entry goes here
-        
+    
     def create_version_radiobuttons(self):
-        # Create and layout version radio buttons
-        label = ttk.Label(self.mainframe, text="Versione:")
-        label.grid(row=5, column=0, sticky=tk.W)
-        self.version_var = tk.StringVar(value="vigente")
-        radio_buttons = [
-            ("Originale", "originale"),
-            ("Vigente", "vigente")
-        ]
+        ttkb.Label(self.mainframe, text="Versione:", bootstyle=INFO).grid(row=5, column=0, sticky=W)
+        self.version_var = StringVar(value="vigente")
+        radio_buttons = [("Originale", "originale"), ("Vigente", "vigente")]
         for idx, (text, value) in enumerate(radio_buttons, start=1):
-            button = ttk.Radiobutton(self.mainframe, text=text, variable=self.version_var, value=value)
-            button.grid(row=5, column=idx, sticky=tk.W)
+            ttkb.Radiobutton(self.mainframe, text=text, variable=self.version_var, value=value).grid(row=5, column=idx, sticky=W)
 
     def create_operation_buttons(self):
         # Create operation buttons like "Estrai dati", "Salva come XML", etc.
@@ -177,8 +171,12 @@ class NormaScraperApp:
             ("Copia Testo", self.copia_output, 3)
         ]
         for text, command, column in operations:
-            button = ttk.Button(self.mainframe, text=text, command=command)
-            button.grid(row=8, column=column, sticky=(tk.W, tk.E), padx=4, pady=4)
+            ttkb.Button(self.mainframe, text=text, command=command, bootstyle="success-outline").grid(row=8, column=column, sticky=(W, E), padx=4, pady=4)
+    
+    def create_tooltip(elf, widget, text):
+        tool_tip = Tooltip(widget, text)
+        widget.bind('<Enter>', tool_tip.show_tooltip)  # Bind mouse enter event
+        widget.bind('<Leave>', tool_tip.hide_tooltip)  # Bind mouse leave event
             
     def create_combobox(self, container, values, default_text, row, column, **options):
             """
@@ -190,9 +188,9 @@ class NormaScraperApp:
             :param row: La riga del layout grid dove posizionare la Combobox.
             :param column: La colonna del layout grid dove posizionare la Combobox.
             :param options: Opzioni aggiuntive per configurare la Combobox.
-            :return: Un'istanza di ttk.Combobox.
+            :return: Un'istanza di ttkb.Combobox.
             """
-            combobox = ttk.Combobox(container, values=values, **options)
+            combobox = ttkb.Combobox(container, values=values, **options)
             combobox.grid(row=row, column=column, sticky=(tk.W, tk.E), padx=2, pady=2)
             combobox.set(default_text)
             return combobox
@@ -210,19 +208,31 @@ class NormaScraperApp:
             ("Carica cronologia", self.carica_cronologia, 3)
         ]
         for text, command, column in history_ops:
-            button = ttk.Button(self.mainframe, text=text, command=command)
+            button = ttkb.Button(self.mainframe, text=text, command=command)
             button.grid(row=11, column=column, sticky="ew")
             
-    def create_labeled_entry(self, label, placeholder, row, width = None):
-        ttk.Label(self.mainframe, text=label).grid(row=row, column=0, sticky=tk.W)
-        entry = ttk.Entry(self.mainframe)
-        entry.grid(row=row, column=1, columnspan=2, sticky=(tk.W, tk.E))
-            
-            # Icona tooltip
-        tooltip_icon = ttk.Label(self.mainframe, text="?", font=('Helvetica', 10, 'bold'), background='lightgray', relief='raised', width=width)
-        tooltip_icon.grid(row=row, column=1+2, sticky=tk.W, padx=(2, 0))
-        Tooltip(tooltip_icon, placeholder)  # Associa il tooltip all'icona
+    def create_labeled_entry(self, label_text, placeholder, row, width=None, increment=False):
+        # Create and place the label for the entry
+        label = ttkb.Label(self.mainframe, text=label_text, bootstyle='info')
+        label.grid(row=row, column=0, sticky=tk.W, padx=5, pady=5)
+
+        # Create the entry widget
+        entry = ttkb.Entry(self.mainframe)
+        entry.grid(row=row, column=1, columnspan=2, sticky=(tk.W, tk.E), padx=5, pady=5)
+
+        # Attach a tooltip to the entry widget
+        self.create_tooltip(entry, placeholder)  # Assuming create_tooltip is correctly implemented
+
+        if increment:
+            # Buttons for incrementing and decrementing the value
+            inc_button = ttkb.Button(self.mainframe, text="▲", bootstyle="outline", command=lambda: self.increment_entry(entry))
+            dec_button = ttkb.Button(self.mainframe, text="▼", bootstyle="outline", command=lambda: self.decrement_entry(entry))
+            inc_button.grid(row=row, column=3, padx=2, pady=2, sticky=tk.E)
+            dec_button.grid(row=row, column=4, padx=2, pady=2, sticky=tk.E)
+
         return entry
+
+
     
 
 
@@ -248,7 +258,7 @@ class NormaScraperApp:
             entry.insert(0, '1')
 
         # Chiamare fetch_act_data solo se il Combobox ha un valore valido e non è il default
-        if self.act_type_combobox.get() != "Seleziona il tipo di atto":
+        if self.act_type_combobox.get() != "Select":
             self.fetch_act_data()
 
     def decrement_entry(self, entry):
@@ -263,11 +273,9 @@ class NormaScraperApp:
             entry.insert(0, '1')
 
         # Chiamare fetch_act_data solo se il Combobox ha un valore valido e non è il default
-        if self.act_type_combobox.get() != "Seleziona il tipo di atto":
+        if self.act_type_combobox.get() != "Select":
             self.fetch_act_data()
 
-
-        
     def toggle_extension(self):
         """Mostra o nasconde il frame dell'estensione."""
         if self.extension_frame.winfo_viewable():
@@ -331,7 +339,7 @@ class NormaScraperApp:
         self.finestra_cronologia.title("Cronologia Ricerche")
         self.finestra_cronologia.geometry("600x400")
 
-        self.tree = ttk.Treeview(self.finestra_cronologia, columns=('Dato normativo', 'URL'), show='headings')
+        self.tree = ttkb.Treeview(self.finestra_cronologia, columns=('Dato normativo', 'URL'), show='headings')
         self.tree.heading('Dato normativo', text='Dato normativo')
         self.tree.heading('URL', text='URL')
         self.tree.column('Dato normativo', width=400)
@@ -343,11 +351,11 @@ class NormaScraperApp:
             self.tree_items[item_id] = norma
 
         self.tree.bind("<Double-1>", self.on_item_clicked)
-        scrollbar = ttk.Scrollbar(self.finestra_cronologia, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar = ttkb.Scrollbar(self.finestra_cronologia, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
-        btn_pulisci = ttk.Button(self.finestra_cronologia, text="Pulisci", command=self.cancella_cronologia)
+        btn_pulisci = ttkb.Button(self.finestra_cronologia, text="Pulisci", command=self.cancella_cronologia)
         btn_pulisci.pack(side=tk.BOTTOM, anchor=tk.E, padx=10, pady=10)
 
     def on_item_clicked(self, event):
@@ -393,7 +401,6 @@ class NormaScraperApp:
             else:
                 messagebox.showwarning("Annullato", "Salvataggio cronologia annullato.")
 
-
     def carica_cronologia(self):
         dir_cronologia = os.path.join(CURRENT_APP_PATH, "Resources", "Frameworks", "usr", "cron")
         
@@ -406,9 +413,10 @@ class NormaScraperApp:
  
     def cancella_cronologia(self):
         # Pulisce la cronologia
-        self.tree.delete(*self.tree.get_children())
-        self.cronologia.clear()
-        messagebox.showinfo("Cronologia", "Cronologia pulita con successo.")
+        if len(self.cronologia)>0:
+            self.tree.delete(*self.tree.get_children())
+            self.cronologia.clear()
+            messagebox.showinfo("Cronologia", "Cronologia pulita con successo.")
 
 
 #       
@@ -472,27 +480,6 @@ class NormaScraperApp:
         #self.update_menu = tk.Menu(self.menu_bar, tearoff=0)
         #self.update_menu.add_command(label="Check for Updates", command=self.user_initiated_update)
         #self.menu_bar.add_cascade(label="Update", menu=self.update_menu)
-
-        
-    #def user_initiated_update(self):
-    #    """Controlla gli aggiornamenti in un thread separato."""
-    #    update_thread = threading.Thread(target=self.check_and_apply_update, daemon=True)
-    #    update_thread.start()
-
-    #def check_and_apply_update(self):
-    #    is_available, latest_version = self.updater.is_update_available()
-    #    if is_available:
-    #        self.prompt_for_update(latest_version)
-
-    #def prompt_for_update(self, latest_version):
-    #    """Chiede all'utente se desidera applicare l'aggiornamento."""
-    #    # Usa self.root.after per eseguire questa operazione nel thread dell'UI
-    #    self.root.after(0, lambda: self.ask_to_update(latest_version))
- 
-    #def ask_to_update(self, latest_version):
-    #    response = messagebox.askyesno("Aggiornamento Disponibile", f"È disponibile un nuovo aggiornamento alla versione {latest_version}. Vuoi applicarlo ora?")
-    #    if response:
-    #        self.updater.apply_update(latest_version)
 
     def apri_configurazione(self):
         ConfigurazioneDialog(self.root)

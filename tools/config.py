@@ -1,6 +1,6 @@
 import yaml
 import tkinter as tk 
-from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialog, Toplevel
+import ttkbootstrap as ttkb
 
 class ConfigurazioneDialog(tk.Toplevel):
     def __init__(self, parent):
@@ -21,35 +21,35 @@ class ConfigurazioneDialog(tk.Toplevel):
         self.resizable(False, False)
 
     def create_widgets(self):
-        self.tipo_atto_label = ttk.Label(self, text="Tipo di Atto Preferito:")
+        self.tipo_atto_label = ttkb.Label(self, text="Tipo di Atto Preferito:")
         self.tipo_atto_var = tk.StringVar(value=self.configurazioni.get("ultimo_tipo_atto", ""))
-        self.tipo_atto_entry = ttk.Entry(self, textvariable=self.tipo_atto_var)
+        self.tipo_atto_entry = ttkb.Entry(self, textvariable=self.tipo_atto_var)
 
-        self.dimensione_font_label = ttk.Label(self, text="Dimensione del Font:")
+        self.dimensione_font_label = ttkb.Label(self, text="Dimensione del Font:")
         self.dimensione_font_var = tk.IntVar(value=self.configurazioni.get("ultima_dimensione_font", 15))
-        self.dimensione_font_spinbox = ttk.Spinbox(self, from_=10, to_=24, textvariable=self.dimensione_font_var)
+        self.dimensione_font_spinbox = ttkb.Spinbox(self, from_=10, to_=24, textvariable=self.dimensione_font_var)
 
-        self.tema_label = ttk.Label(self, text="Tema:")
+        self.tema_label = ttkb.Label(self, text="Tema:")
         self.tema_var = tk.StringVar(value=self.configurazioni.get("ultimo_tema", "normale"))
-        self.tema_combobox = ttk.Combobox(self, textvariable=self.tema_var, values=["normale", "scuro", "alto contrasto"])
+        self.tema_combobox = ttkb.Combobox(self, textvariable=self.tema_var, values=["normale", "scuro", "alto contrasto"])
 
-        self.lingua_label = ttk.Label(self, text="Lingua:")
+        self.lingua_label = ttkb.Label(self, text="Lingua:")
         self.lingua_var = tk.StringVar(value=self.configurazioni.get("lingua", "Italiano"))
-        self.lingua_combobox = ttk.Combobox(self, textvariable=self.lingua_var, values=["Italiano", "English"])
+        self.lingua_combobox = ttkb.Combobox(self, textvariable=self.lingua_var, values=["Italiano", "English"])
 
-        self.notifiche_label = ttk.Label(self, text="Notifiche:")
+        self.notifiche_label = ttkb.Label(self, text="Notifiche:")
         self.notifiche_var = tk.BooleanVar(value=self.configurazioni.get("notifiche", True))
-        self.notifiche_checkbutton = ttk.Checkbutton(self, text="Abilita Notifiche", variable=self.notifiche_var)
+        self.notifiche_checkbutton = ttkb.Checkbutton(self, text="Abilita Notifiche", variable=self.notifiche_var)
 
-        self.salvataggio_label = ttk.Label(self, text="Salvataggio Automatico Ricerche:")
+        self.salvataggio_label = ttkb.Label(self, text="Salvataggio Automatico Ricerche:")
         self.salvataggio_automatico_var = tk.BooleanVar(value=self.configurazioni.get("salvataggio_automatico", True))
-        self.salvataggio_automatico_checkbutton = ttk.Checkbutton(self, text="Abilita Salvataggio Automatico", variable=self.salvataggio_automatico_var)
+        self.salvataggio_automatico_checkbutton = ttkb.Checkbutton(self, text="Abilita Salvataggio Automatico", variable=self.salvataggio_automatico_var)
 
-        self.cronologia_label = ttk.Label(self, text="Elementi Cronologia Ricerche:")
+        self.cronologia_label = ttkb.Label(self, text="Elementi Cronologia Ricerche:")
         self.cronologia_ricerche_var = tk.IntVar(value=self.configurazioni.get("cronologia_ricerche", 50))
-        self.cronologia_ricerche_spinbox = ttk.Spinbox(self, from_=0, to_=100, textvariable=self.cronologia_ricerche_var)
+        self.cronologia_ricerche_spinbox = ttkb.Spinbox(self, from_=0, to_=100, textvariable=self.cronologia_ricerche_var)
 
-        self.salva_button = ttk.Button(self, text="Salva", command=self.salva_configurazioni)
+        self.salva_button = ttkb.Button(self, text="Salva", command=self.salva_configurazioni)
 
     def place_widgets(self):
         self.tipo_atto_label.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
@@ -77,7 +77,7 @@ class ConfigurazioneDialog(tk.Toplevel):
 
     def carica_configurazioni(self):
         try:
-            with open('configurazione.yaml', 'r') as file:
+            with open('resources/configurazione.yaml', 'r') as file:
                 return yaml.safe_load(file)
         except FileNotFoundError:
             return {}
@@ -95,44 +95,3 @@ class ConfigurazioneDialog(tk.Toplevel):
         with open('resources/configurazione.yaml', 'w') as file:
             yaml.dump(configurazioni, file, default_flow_style=False)
         self.destroy()
-
-class AutoUpdater:
-    def __init__(self, repo_url, app_directory, build_command, main_app_script=None):
-        self.repo_url = repo_url
-        self.app_directory = app_directory
-        self.build_command = build_command
-        self.main_app_script = main_app_script if main_app_script else ""
-
-    def fetch_latest_tag(self):
-        repo = Repo.clone_from(self.repo_url, tempfile.mkdtemp())
-        tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-        latest_tag = tags[-1] if tags else None
-        return latest_tag
-
-    def is_update_available(self):
-        current_version = self.get_current_version()
-        latest_tag = self.fetch_latest_tag()
-        if latest_tag and (latest_tag.name != current_version):
-            return True, latest_tag.name
-        return False, None
-
-    def get_current_version(self):
-        try:
-            with open(os.path.join(self.app_directory, 'version.txt'), 'r') as version_file:
-                return version_file.read().strip()
-        except FileNotFoundError:
-            return '0.0.0'
-
-    def apply_update(self, latest_version):
-        temp_dir = tempfile.mkdtemp()
-        Repo.clone_from(self.repo_url, temp_dir, branch=latest_version)
-        subprocess.check_call(self.build_command, cwd=temp_dir, shell=True)
-        # Copia l'eseguibile aggiornato e il nuovo file version.txt
-        # Assicurati che queste operazioni siano atomiche e gestisci i permessi di file se necessario
-        # Il codice specifico dipende dalla struttura del progetto e dalla piattaforma
-
-        self.restart_app()
-
-    def restart_app(self):
-        python = sys.executable
-        os.execl(python, python, self.main_app_script)
