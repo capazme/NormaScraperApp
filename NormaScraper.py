@@ -78,7 +78,7 @@ class NormaScraperApp:
             '<Control-q>': lambda event:self.on_exit(),
             '<Return>': lambda event:self.fetch_act_data(),
             '<Control-t>': lambda event:self.apri_finestra_cronologia(),
-            '<Control-h>': lambda event: self.apri_finestra_readme(),
+            '<Control-h>': lambda event: self.apri_readme(),
             '<Control-z>': lambda event: self.clear_all_fields(
                 [self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry],
                 self.act_type_combobox)
@@ -236,31 +236,12 @@ class NormaScraperApp:
 # FUNZIONI
 #
     def apri_readme(self):
-        self.readme_window = Toplevel(self)
+        github_url = "https://github.com/capazme/NormaScraperApp"
+        webbrowser.open(github_url)
 
-        if self.readme:
-            
-            self.readme.destroy()
-            self.readme = None
-        
-        # Attempt to convert the Markdown content of README.md to HTML
-        html_content = self.convert_md_to_html("README.md")
-        
-        # Display the HTML content using HTMLLabel from tkhtmlview
-        self.display_html_content(self.mainframe, html_content)
     
-    def convert_md_to_html(self, file_path):
-        """Convert Markdown file to HTML."""
-        try:
-            with open(file_path, "r", encoding="utf-8") as file:
-                return markdown.markdown(file.read())
-        except FileNotFoundError:
-            return "<p>File README.md non trovato.</p>"
-    
-    def display_html_content(self, window, content):
-        """Display HTML content in a given window."""
-        html_label = HTMLLabel(window, html=content, background="white")
-        html_label.grid_bbox(fill=tk.BOTH, expand=True)
+
+
 
 
     def increment_entry(self, entry):

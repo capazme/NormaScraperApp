@@ -19,13 +19,11 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![C00-1.0 License][license-shield]][license-url]
-
-
+[Contributors][contributors-url]
+[Forks][forks-url]
+[Stargazers][stars-url]
+[Issues][issues-url]
+[C00-1.0 License][license-url]
 
 <!-- PROJECT LOGO -->
 
@@ -133,7 +131,7 @@ To get a local copy up and running follow these simple example steps.
 
 ### Spec
 
-##### get_urn_and_extract_data()
+#### get_urn_and_extract_data()
 
 La funzione get_urn_and_extract_data è progettata per interrogare il sito Normattiva, utilizzando **l'URN** (Uniform Resource Name) per identificare specifici atti legislativi. Una volta ottenuto l'accesso all'atto desiderato, la funzione estrae dati rilevanti che possono includere testo dell'atto, date di promulgazione, modifiche successive, e altro ancora. I parametri principali della funzione includono:
 
@@ -183,11 +181,11 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
 ## Roadmap
 
 - [ ] Brocardi implementation
-    - [ ] Aggiunta link articoli rilevanti
-    - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
+  - [ ] Aggiunta link articoli rilevanti
+  - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
 - [ ] Altalex implementation
-    - [ ] Altalexpedia
-- [ ] 
+  - [ ] Altalexpedia
+- [ ]
 
 See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a full list of proposed features (and known issues).
 
