@@ -38,7 +38,7 @@
 <h3 align="center">NORMASCRAPER - BETA</h3>
 
 <p align="center">
-    Semplice interfaccia per accedere al sito del governo italiano Normattiva
+    Semplice interfaccia per accedere programmaticamente al portale delle leggi italiano Normattiva
     <br />
     <br />
     <br />
