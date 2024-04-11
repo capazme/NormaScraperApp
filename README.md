@@ -140,7 +140,7 @@ _For more examples, please refer to the [Documentation](https://example.com)_
 - [ ] Feature 3
   - [ ] Nested Feature
 
-See the [open issues](https://github.com/github_username/repo_name/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -175,7 +175,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_client.com
 
-Project Link: [https://github.com/github_username/repo_name](https://github.com/github_username/repo_name)
+Project Link: [https://github.com/capazme/NormaScraperApp](https://github.com/capazme/NormaScraperApp)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -198,13 +198,13 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 ```
 
 [contributors-url]: https://github.com/capazme/NormaScraperApp/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/github_username/repo_name.svg?style=for-the-badge
-[forks-url]: https://github.com/capazme/NormaScraperApp//network/members
-[stars-shield]: https://img.shields.io/github/stars/github_username/repo_name.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/capazme/NormaScraperApp.svg?style=for-the-badge
+[forks-url]: https://github.com/capazme/NormaScraperApp/network/members
+[stars-shield]: https://img.shields.io/github/stars/capazme/NormaScraperApp.svg?style=for-the-badge
 [stars-url]: https://github.com/capazme/NormaScraperApp/stargazers
-[issues-shield]: https://img.shields.io/github/issues/github_username/repo_name.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/capazme/NormaScraperApp.svg?style=for-the-badge
 [issues-url]: https://github.com/capazme/NormaScraperApp/issues
-[license-shield]: https://img.shields.io/github/license/github_username/repo_name.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/capazme/NormaScraperApp.svg?style=for-the-badge
 [license-url]: https://github.com/capazme/NormaScraperApp/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [product-screenshot]: images/screenshot.png
@@ -224,4 +224,4 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 [Bootstrap-url]: https://getbootstrap.com
 [JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
 [JQuery-url]: https://jquery.com
-[contributors-shield]: https://img.shields.io/github/contributors/github_username/repo_name.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/capazme/NormaScraperApp.svg?style=for-the-badge
