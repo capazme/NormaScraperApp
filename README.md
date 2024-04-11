@@ -20,11 +20,13 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-[Contributors][contributors-url]
-[Forks][forks-url]
-[Stargazers][stars-url]
-[Issues][issues-url]
-[CC0-1.0 License][license-url]
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![C00-1.0 License][license-shield]][license-url]
+
+
 
 <!-- PROJECT LOGO -->
 
@@ -171,7 +173,7 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
     * Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)"
     * date (str, optional): La data di pubblicazione dell'atto in formato YYYY-MM-DD.
 * act_number (str, optional): Il numero dell'atto legislativo.
-* article (str, optional): Il numero dell'articolo all'interno dell'atto legislativo.(con eventuali estensioni, come "-bis" o "-ter".)
+* , come "-bis" o "-ter".)
 * version (str, optional): Indica se l'atto è nella versione "originale" o "vigente".
 * version_date (str, optional): La data della versione dell'atto in formato YYYY-MM-DD.
 

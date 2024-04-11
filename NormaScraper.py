@@ -1,6 +1,6 @@
 import tkinter as tk 
 import json
-from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialog
+from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialog, Toplevel
 from tkinter.filedialog import askdirectory
 import webbrowser
 import pyperclip
@@ -8,11 +8,9 @@ from usr import *
 from sys_op import get_urn_and_extract_data, NormaVisitata
 from config import ConfigurazioneDialog
 import os
-from functools import lru_cache
 import sys
-import tempfile
-import subprocess
-#from git import Repo
+from tkhtmlview import HTMLLabel
+import markdown
 
 CURRENT_APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -237,7 +235,34 @@ class NormaScraperApp:
 #
 # FUNZIONI
 #
+    def apri_readme(self):
+        self.readme_window = Toplevel(self)
+
+        if self.readme:
+            
+            self.readme.destroy()
+            self.readme = None
+        
+        # Attempt to convert the Markdown content of README.md to HTML
+        html_content = self.convert_md_to_html("README.md")
+        
+        # Display the HTML content using HTMLLabel from tkhtmlview
+        self.display_html_content(self.mainframe, html_content)
     
+    def convert_md_to_html(self, file_path):
+        """Convert Markdown file to HTML."""
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                return markdown.markdown(file.read())
+        except FileNotFoundError:
+            return "<p>File README.md non trovato.</p>"
+    
+    def display_html_content(self, window, content):
+        """Display HTML content in a given window."""
+        html_label = HTMLLabel(window, html=content, background="white")
+        html_label.grid_bbox(fill=tk.BOTH, expand=True)
+
+
     def increment_entry(self, entry):
         current_value = entry.get()
         try:
@@ -300,32 +325,6 @@ class NormaScraperApp:
         if comboboxes is not None:
             for combobox in comboboxes:
                 combobox.set(combobox_default_value)
-
-    def apri_finestra_readme(self):
-        if not self.finestra_readme or not self.finestra_readme.winfo_exists():
-            self.finestra_readme = tk.Toplevel(self.root)
-            self.finestra_readme.title("INFO")
-            self.finestra_readme.geometry("600x400")
-
-            text_area = scrolledtext.ScrolledText(self.finestra_readme, wrap=tk.WORD, width=40, height=10)
-            text_area.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
-            text_area.configure(font='TkFixedFont', state='disabled')
-            
-
-            # Costruisce il percorso alla cartella "usr/cron" partendo dalla directory corrente
-            readmepath = os.path.join(CURRENT_APP_PATH, "README.txt")
-            if dir:
-                with open(readmepath, 'r') as file:
-                    readme_content = file.read()
-            else:
-                readme_content = "File README.txt non trovato."
-
-            text_area.configure(state='normal')
-            text_area.insert(tk.INSERT, readme_content)
-            text_area.configure(state='disabled')
-        else:
-            # Porta la finestra secondaria esistente in primo piano
-            self.finestra_readme.lift()
 
 #
 # XLM 
@@ -486,7 +485,7 @@ class NormaScraperApp:
         
         self.accessibility_menu = Menu(self.menu_bar, tearoff=0)
         self.accessibility_menu.add_command(label="Increase Text Size (ctrl+i)", command=self.increase_text_size)
-        self.accessibility_menu.add_command(label="HELP (ctrl+h)", command=self.apri_finestra_readme)
+        self.accessibility_menu.add_command(label="HELP (ctrl+h)", command=self.apri_readme)
         self.accessibility_menu.add_command(label="High Contrast (ctrl+h)", command=self.apply_high_contrast_theme)
         self.menu_bar.add_cascade(label="Accessibility", menu=self.accessibility_menu)
         self.accessibility_menu.add_command(label="Decrease Text Size (ctrl+o)", command=self.decrease_text_size)
