@@ -1,7 +1,6 @@
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 
-`<a name="readme-top"></a>`
-
+<p><a href="#readme-top"></a></p>
 <!--
 *** Thanks for checking out the Best-README-Template. If you have a suggestion
 *** that would make this better, please fork the repo and create a pull request
@@ -20,13 +19,11 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![C00-1.0 License][license-shield]][license-url]
-
-
+[Contributors][contributors-url]
+[Forks][forks-url]
+[Stargazers][stars-url]
+[Issues][issues-url]
+[C00-1.0 License][license-url]
 
 <!-- PROJECT LOGO -->
 
@@ -116,7 +113,7 @@ To get a local copy up and running follow these simple example steps.
    pip install -r resources/requirements.txt
    ```
 4. Avvia NormaScraper.py con python 3.12 o superiore
-   ```js
+   ```sh
    python -m NormaScraper.py
    ```
 
@@ -183,10 +180,12 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
 
 ## Roadmap
 
-- [ ] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
-  - [ ] Nested Feature
+- [ ] Brocardi implementation
+    - [ ] Aggiunta link articoli rilevanti
+    - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
+- [ ] Altalex implementation
+    - [ ] Altalexpedia
+- [ ] 
 
 See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a full list of proposed features (and known issues).
 
