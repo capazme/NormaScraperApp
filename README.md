@@ -171,10 +171,10 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
     * Codice della Protezione Civile (cdpc, cod. prot. civ.)
     * Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)"
     * date (str, optional): La data di pubblicazione dell'atto in formato YYYY-MM-DD.
-* act_number (str, optional): Il numero dell'atto legislativo.
+* **act_number** (str, optional): Il numero dell'atto legislativo.
 * , come "-bis" o "-ter".)
-* version (str, optional): Indica se l'atto è nella versione "originale" o "vigente".
-* version_date (str, optional): La data della versione dell'atto in formato YYYY-MM-DD.
+* **version** (str, optional): Indica se l'atto è nella versione "originale" o "vigente".
+* **version_date** (str, optional): La data della versione dell'atto in formato YYYY-MM-DD.
 
   ---
 
@@ -187,7 +187,6 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
     - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
 - [ ] Altalex implementation
     - [ ] Altalexpedia
-- [ ] 
 
 See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a full list of proposed features (and known issues).
 
