@@ -36,7 +36,7 @@
 <h3 align="center">NORMASCRAPER - BETA</h3>
 
   <p align="center">
-    project_description
+    Semplice interfaccia per accedere al sito del governo italiano Normattiva
     <br />
     <br />
     <br />
@@ -81,8 +81,6 @@
 ## About The Project
 
 
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `github_username`, `repo_name`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description`
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -101,8 +99,8 @@ This is an example of how you may give instructions on setting up your project l
 To get a local copy up and running follow these simple example steps.
 
 ### Prerequisites
-NESSUN PREREQUISITO per l'app contenuta nel file .zip
-Python e pip sono necessari per costruire dalla fonte
+#### Nessun prerequisito per l'applicazione contenuta nel file .zip.
+#### Python e pip sono necessari per costruire dalla fonte.
 
 ### Installation
 
@@ -124,11 +122,10 @@ Python e pip sono necessari per costruire dalla fonte
 <!-- USAGE EXAMPLES -->
 
 ## Usage
-
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
-
-_For more examples, please refer to the [Documentation](https://example.com)_
-
+<div align="center">
+  <a href="https://github.com/capazme/NormaScraperApp">
+    <img src="resources/screen.png" width="500" height="400">
+  </a>
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- ROADMAP -->
@@ -148,16 +145,6 @@ See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a f
 
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -165,7 +152,7 @@ Don't forget to give the project a star! Thanks again!
 
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the CC0-1.0 License. See `LICENSE.txt` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -173,7 +160,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 ## Contact
 
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_client.com
+Guglielmo Puzio - - guglielmo.puzio00@gmail.com - guglielmo.puzio@studenti.luiss.it (ancora per un po')
 
 Project Link: [https://github.com/capazme/NormaScraperApp](https://github.com/capazme/NormaScraperApp)
 
@@ -182,10 +169,6 @@ Project Link: [https://github.com/capazme/NormaScraperApp](https://github.com/ca
 <!-- ACKNOWLEDGMENTS -->
 
 ## Acknowledgments
-
-* []()
-* []()
-* []()
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
