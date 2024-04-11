@@ -4,13 +4,10 @@ from tkinter import ttk, messagebox, scrolledtext, filedialog, Menu, simpledialo
 from tkinter.filedialog import askdirectory
 import webbrowser
 import pyperclip
-from usr import *
-from sys_op import get_urn_and_extract_data, NormaVisitata
+from tools import sys_op
 from config import ConfigurazioneDialog
 import os
 import sys
-from tkhtmlview import HTMLLabel
-import markdown
 
 CURRENT_APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -79,7 +76,7 @@ class NormaScraperApp:
             '<Return>': lambda event:self.fetch_act_data(),
             '<Control-t>': lambda event:self.apri_finestra_cronologia(),
             '<Control-h>': lambda event: self.apri_readme(),
-            '<Control-z>': lambda event: self.clear_all_fields(
+            '<Control-d>': lambda event: self.clear_all_fields(
                 [self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry],
                 self.act_type_combobox)
         }
@@ -239,11 +236,6 @@ class NormaScraperApp:
         github_url = "https://github.com/capazme/NormaScraperApp"
         webbrowser.open(github_url)
 
-    
-
-
-
-
     def increment_entry(self, entry):
         current_value = entry.get()
         try:
@@ -332,7 +324,7 @@ class NormaScraperApp:
             self.cronologia.append(norma)
 
     def apri_finestra_cronologia(self):
-        if self.finestra_cronologia:
+        if hasattr(self, 'finestra_cronologia') and self.finestra_cronologia:
             self.finestra_cronologia.destroy()
             self.finestra_cronologia = None
         self.finestra_cronologia = tk.Toplevel(self.root)
@@ -355,6 +347,8 @@ class NormaScraperApp:
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
+        btn_pulisci = ttk.Button(self.finestra_cronologia, text="Pulisci", command=self.cancella_cronologia)
+        btn_pulisci.pack(side=tk.BOTTOM, anchor=tk.E, padx=10, pady=10)
 
     def on_item_clicked(self, event):
         col = self.tree.identify_column(event.x)
@@ -406,12 +400,13 @@ class NormaScraperApp:
         percorso_file = filedialog.askopenfilename(title="Seleziona file cronologia", filetypes=(("JSON files", "*.json"), ("all files", "*.*"),), initialdir=dir_cronologia)
         if percorso_file:
             with open(percorso_file, 'r') as f:
-                self.cronologia = [NormaVisitata.from_dict(n) for n in json.load(f)]
+                self.cronologia = [sys_op.NormaVisitata.from_dict(n) for n in json.load(f)]
             messagebox.showinfo("Caricato", "Cronologia caricata con successo")
             self.apri_finestra_cronologia()
  
     def cancella_cronologia(self):
         # Pulisce la cronologia
+        self.tree.delete(*self.tree.get_children())
         self.cronologia.clear()
         messagebox.showinfo("Cronologia", "Cronologia pulita con successo.")
 
@@ -430,7 +425,7 @@ class NormaScraperApp:
         comma = self.comma_entry.get()
         
         try:
-            data, url, norma = get_urn_and_extract_data(act_type=act_type, date=date, act_number=act_number, article=article, comma=comma, version=version, version_date=version_date, save_xml_path=save_xml_path)
+            data, url, norma = sys_op.get_urn_and_extract_data(act_type=act_type, date=date, act_number=act_number, article=article, comma=comma, version=version, version_date=version_date, save_xml_path=save_xml_path)
             self.output_text.delete('1.0', tk.END)
             self.output_text.insert(tk.END, data)
             self.crea_link("Apri URN Normattiva", url, 9, 1)
