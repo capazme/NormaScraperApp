@@ -85,6 +85,32 @@
 
 NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per accedere a Normattiva, il sito del governo italiano che ospita la legislazione nazionale. L'applicazione permette agli utenti di cercare atti legislativi specifici, visualizzare i dettagli e salvare i risultati.
 
+```markdown
+  NormaScraperApp
+  ├── LICENSE.txt
+  ├── NormaScraper-Betav0.7.1.zip
+  ├── NormaScraper.py
+  ├── README.md
+  ├── atti_scaricati
+  │   ├── cost.xml
+  │   └── test.xml
+  ├── resources
+  │   ├── configurazione.yaml
+  │   ├── icon.icns
+  │   ├── logo.png
+  │   ├── requirements.txt
+  │   └── screen.png
+  └── tools
+      ├── __init__.py
+      ├── config.py
+      ├── sys_op.py
+      ├── text_op.py
+      └── usr.py
+  └── usr
+      ├── .index
+      └── cron
+          ├── .index
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Built With
