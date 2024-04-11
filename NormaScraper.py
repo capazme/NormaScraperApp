@@ -5,7 +5,7 @@ from tkinter.filedialog import askdirectory
 import webbrowser
 import pyperclip
 from tools import sys_op
-from config import ConfigurazioneDialog
+from tools.config import ConfigurazioneDialog
 import os
 import sys
 
