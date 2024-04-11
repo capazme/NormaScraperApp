@@ -19,11 +19,13 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-[Contributors][contributors-url]
-[Forks][forks-url]
-[Stargazers][stars-url]
-[Issues][issues-url]
-[C00-1.0 License][license-url]
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![C00-1.0 License][license-shield]][license-url]
+
+
 
 <!-- PROJECT LOGO -->
 
@@ -129,7 +131,7 @@ To get a local copy up and running follow these simple example steps.
   </a>
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### Spec
+# Spec
 
 #### get_urn_and_extract_data()
 
@@ -181,11 +183,11 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
 ## Roadmap
 
 - [ ] Brocardi implementation
-  - [ ] Aggiunta link articoli rilevanti
-  - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
+    - [ ] Aggiunta link articoli rilevanti
+    - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
 - [ ] Altalex implementation
-  - [ ] Altalexpedia
-- [ ]
+    - [ ] Altalexpedia
+- [ ] 
 
 See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a full list of proposed features (and known issues).
 
