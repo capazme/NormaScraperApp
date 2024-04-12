@@ -1,6 +1,6 @@
-import json
+import re
 import os
-from tools.map import BROCARDI_CODICI, BROCARDI_MAP, NORMATTIVA_URN_CODICI
+from tools.map import BROCARDI_CODICI, BROCARDI_MAP
 from tools.sys_op import NormaVisitata
 from tools.text_op import normalize_act_type, parse_date
 
@@ -44,16 +44,32 @@ class BrocardiScraper:
                 return txt, link
         return False
         
-    def load_links(self, file_path):
-        """
-        Load brocardi links from a JSON file.
-        """
-        try:
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return json.load(file)
-        except Exception as e:
-            print(f"Error loading JSON data: {e}")
-            return {}
+    def look_up(self, norma):
+        if isinstance(norma, NormaVisitata):
+            # Assumendo che do_know ritorni una tupla con il link come secondo elemento
+            norma_info = self.do_know(norma)
+            if norma_info:
+                link = norma_info[1]
+                numero_articolo = norma.to_dict()['numero_articolo']
+                components = [link, f"art{numero_articolo}.html"]
+                
+                # Costruisci il pattern usando il primo e l'ultimo componente
+                start, end = components[0], components[1]
+                # La regex qui sotto assume che tra l'inizio e la fine possa esserci qualsiasi cosa
+                pattern = re.compile(re.escape(start) + r".*" + re.escape(end), re.DOTALL)
+
+                # Cerca corrispondenze nel dizionario
+                for key, value in self.knowledge[1].items():
+                    if re.search(pattern, value):
+                        print(f"Found: {value}")
+                        return value
+
+                print("No match found.")
+            else:
+                print("No knowledge available.")
+        else:
+            print("Invalid input type.")
+            
 
     def search_brocardi(self, search_term):
         """
@@ -62,13 +78,14 @@ class BrocardiScraper:
         url = self.links.get(search_term)
         return url if url else "No brocardi link available for this term."
 
-#brocardi_scraper = BrocardiScraper()
-#count_false = []
-#count_true = []
-#
-#dict_normattiva = NORMATTIVA_URN_CODICI
-#dict_brocardi = BROCARDI_CODICI
-#
-#norma = NormaVisitata(tipo_atto='codice penale')
-#
-#print (brocardi_scraper.do_know('L. 22 dicembre 2017, n. 219'))
+brocardi_scraper = BrocardiScraper()
+
+
+data_atto = "6 settembre 2011"
+numero_atto = "159" 
+articolo_atto = "1" 
+tipo_atto = "D.lgs."
+
+norma = NormaVisitata(tipo_atto=tipo_atto, numero_atto=numero_atto, numero_articolo=articolo_atto, data=data_atto)
+
+print (brocardi_scraper.look_up(norma))

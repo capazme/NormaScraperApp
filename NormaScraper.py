@@ -368,7 +368,7 @@ class NormaScraperApp:
     def ripeti_ricerca_selezionata(self, norma):
         if norma:
             self.act_type_combobox.delete(0, tk.END)
-            self.act_type_combobox.insert(0, norma.tipo_atto)
+            self.act_type_combobox.insert(0, norma.tipo_atto_str)
 
             self.date_entry.delete(0, tk.END)
             self.date_entry.insert(0, norma.data)
@@ -442,10 +442,10 @@ class NormaScraperApp:
             messagebox.showerror("Errore", str(e))
 
     def check_brocardi(self, norma):
-        result = self.brocardi.do_know(norma)
+        result = self.brocardi.look_up(norma)
         if result:
             self.brocardi_button.grid()  # Mostra il pulsante
-            self.brocardi_button.configure(command=lambda: self.apri_url(result[1]))
+            self.brocardi_button.configure(command=lambda: self.apri_url(result))
         else:
             self.brocardi_button.grid_remove()
         
