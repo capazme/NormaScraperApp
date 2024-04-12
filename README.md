@@ -100,11 +100,11 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
   │   ├── requirements.txt
   │   └── screen.png
   └── tools
-      ├── __init__.py
-      ├── config.py
-      ├── sys_op.py
-      ├── text_op.py
-      └── usr.py
+  │   ├── __init__.py
+  │   ├── config.py
+  │   ├── sys_op.py
+  │   ├── text_op.py
+  │   ├── usr.py
   └── usr
       ├── .index
       └── cron
