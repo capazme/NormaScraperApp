@@ -481,7 +481,7 @@ class NormaScraperApp:
             self.output_text.insert(tk.END, result[0])
             if result[2]:  # Se c'è un URL, mostra il bottone per il link
                 self.brocardi_link_button.grid()  # Mostra il pulsante
-                self.brocardi_link_button.configure(command=lambda: self.apri_url(result[1]))
+                self.brocardi_link_button.configure(command=lambda: self.apri_url(result[2]))
 
             print(result[1])
             if result[1]:  # Se ci sono dati per i bottoni brocardi
