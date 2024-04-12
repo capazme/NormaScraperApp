@@ -111,10 +111,13 @@ class NormaScraperApp:
         self.create_output_area()
         self.create_history_buttons()
         self.create_progress_bar()
-        
-        self.brocardi_button = ttkb.Button(self.mainframe, text="Brocardi")
-        self.brocardi_button.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
-        self.brocardi_button.grid_remove()
+        self.brocardi_buttons_frame = ttkb.Frame(self.mainframe)
+        self.brocardi_buttons_frame.grid(row=13, column=0, columnspan=4, sticky="nsew", padx=5, pady=5)
+
+        self.brocardi_link_button = ttkb.Button(self.mainframe, text="Apri in Brocardi")
+        self.brocardi_link_button.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
+        self.brocardi_link_button.grid_remove()
+    
 
     def configure_mainframe(self):
         self.mainframe.grid(column=0, row=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -431,12 +434,8 @@ class NormaScraperApp:
     def fetch_act_data(self, save_xml_path=None):
         threading.Thread(target=self._fetch_act_data, args=(save_xml_path,), daemon=True).start()
 
-    def fetch_act_data(self, save_xml_path=None):
-    # Avvia un thread per l'operazione di lunga durata
-        threading.Thread(target=self._fetch_act_data, args=(save_xml_path,), daemon=True).start()
-
     def _fetch_act_data(self, save_xml_path=None):
-        self.root.after(50, self.progress_bar.start)  # Avvia la barra di progresso nel thread principale
+        # Avvia la barra di progresso nel thread principale
 
         act_type = self.act_type_combobox.get()  
         date = self.date_entry.get()
@@ -450,12 +449,13 @@ class NormaScraperApp:
             article = None
         
         try:
+            self.root.after(50, self.progress_bar.start)
             data, url, norma = sys_op.get_urn_and_extract_data(act_type=act_type, date=date, act_number=act_number, article=article, comma=comma, version=version, version_date=version_date, save_xml_path=save_xml_path)
-            self.root.after(50, lambda: self.display_results(data, url, norma))
+            self.root.after(5, self.progress_bar.stop)
+            self.root.after(5, lambda: self.display_results(data, url, norma))
         except Exception as e:
-            self.root.after(50, lambda: messagebox.showerror("Errore", str(e)))
-        finally:
-            self.root.after(50, self.progress_bar.stop)  # Ferma la barra di progresso nel thread principale
+            self.root.after(5, lambda: messagebox.showerror("Errore", str(e)))
+         # Ferma la barra di progresso nel thread principale
 
     def display_results(self, data, url, norma):
         self.output_text.delete('1.0', tk.END)
@@ -463,20 +463,94 @@ class NormaScraperApp:
         self.crea_link("Apri URN Normattiva", url, 9, 1)
         self.aggiungi_a_cronologia(norma)
         self.check_brocardi(norma)
-    
-    def check_brocardi(self, norma):
-        result = self.brocardi.look_up(norma)
-        if result:
-            self.brocardi_button.grid()  # Mostra il pulsante
-            self.brocardi_button.configure(command=lambda: self.apri_url(result))
-        else:
-            self.brocardi_button.grid_remove()
-        
+     
+                  
     def crea_link(self, text, url, row, column):
         link = tk.Label(self.mainframe, text=text, fg="blue", cursor="hand2")
         link.bind("<Button-1>", lambda e: self.apri_url(url))
         link.grid(row=row, column=column)
+    
+#
+# BROCARDI
+#  
+    
+    def check_brocardi(self, norma):
+        result = self.brocardi.get_info(norma)
+        # Assicurarsi che result sia una tupla con due elementi prima di accedere
+        if len(result) >= 2:
+            self.output_text.insert(tk.END, result[0])
+            if result[2]:  # Se c'è un URL, mostra il bottone per il link
+                self.brocardi_link_button.grid()  # Mostra il pulsante
+                self.brocardi_link_button.configure(command=lambda: self.apri_url(result[1]))
+
+            print(result[1])
+            if result[1]:  # Se ci sono dati per i bottoni brocardi
+                # Ritarda la creazione dei bottoni per assicurarsi che tutto il resto sia aggiornato
+                self.root.after(100, lambda: self.create_brocardi_buttons(result[1]))
+    
+    def create_brocardi_buttons(self, data):
+        """Create dynamic buttons based on the data dictionary in a Toplevel window."""
+        # Check if a Toplevel already exists, if yes, clear it, otherwise create a new one
+        if hasattr(self, 'brocardi_toplevel') and self.brocardi_toplevel.winfo_exists():
+            # Clear existing buttons
+            for widget in self.brocardi_toplevel.winfo_children():
+                widget.destroy()
+        else:
+            # Create a new Toplevel window
+            self.brocardi_toplevel = tk.Toplevel(self.root)
+            self.brocardi_toplevel.title("Dettagli Brocardi")
+
+        # Dynamically create buttons inside the Toplevel window
+        row = 0
+        for key, value in data.items():
+            if value:
+                button = ttkb.Button(self.brocardi_toplevel, text=f"{key}",
+                                    command=lambda v=value: self.create_value_window(v))
+                button.grid(row=row, column=0, sticky="ew", padx=5, pady=5)
+                self.brocardi_toplevel.grid_columnconfigure(0, weight=1)  # Make the button expand
+                row += 1
+
+        # Adjust window size automatically to fit contents
+        self.brocardi_toplevel.resizable(width=True, height=True)  # Allow resizing if necessary
+        self.brocardi_toplevel.geometry("")  # Clear any fixed geometry settings
+
+        # Lift the Toplevel window to make sure it is on top
+        self.brocardi_toplevel.lift()
+        self.brocardi_toplevel.attributes('-topmost', True)  # Ensure it stays on top until focus is changed
+        self.brocardi_toplevel.after(1000, lambda: self.brocardi_toplevel.attributes('-topmost', False))  # Revert 'always on top' after 1 second
+
+
+    def create_value_window(self, value):
+        # Questa funzione crea una nuova finestra per mostrare il valore
+        top = Toplevel(self.root)
+        top.title("Dettagli")
         
+        # Assicurati che la finestra appaia al primo livello
+        top.attributes('-topmost', True)
+
+        # Prepara il testo in base al tipo di valore
+        if isinstance(value, list):
+            # Se il valore è una lista, uniscila in una stringa con newline come separatore e una linea di separazione tra gli elementi
+            value_str = '\n'.join(f"{item}\n__________________" for item in value[:-1]) + f"\n{value[-1]}" if value else ""
+        elif isinstance(value, dict):
+            # Se è un dizionario, formatta come chiave: valore
+            value_str = '\n'.join(f"{key}: {val}\n__________________" for key, val in value.items())
+        else:
+            # Altrimenti, converti direttamente il valore in una stringa
+            value_str = str(value)
+
+        # Utilizza ScrolledText per mostrare il valore
+        text_area = ttkb.ScrolledText(top, wrap='word', height=10, width=50)
+        text_area.pack(padx=10, pady=10, fill='both', expand=True)
+        text_area.insert('1.0', value_str)
+        text_area.config(state='disabled')  # Rendi il testo non modificabile
+
+        # Dopo un certo intervallo, rimuovi il flag 'topmost' per permettere alla finestra di andare in background se necessario
+        top.after(5000, lambda: top.attributes('-topmost', False))
+
+
+
+
 #
 # MENU
 #

@@ -1,8 +1,11 @@
 import re
 import os
+from bs4 import BeautifulSoup
 from tools.map import BROCARDI_CODICI, BROCARDI_MAP
 from tools.sys_op import NormaVisitata
 from tools.text_op import normalize_act_type, parse_date
+import requests
+
 
 CURRENT_APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -74,6 +77,48 @@ class BrocardiScraper:
         else:
             print("Invalid input type.")
             
+    def get_info(self, norma):
+        if isinstance(norma, NormaVisitata):
+            norma_link = self.look_up(norma)
+            if norma_link:
+                response=requests.get(norma_link)
+                if response.status_code == 200:
+                    html_content = response.text
+                    soup = BeautifulSoup(html_content, 'html.parser')
+                    info = {}
+                    position = soup.find('div', id='breadcrumb', recursive=True).text
+                    if position:
+                        position = position.strip().replace('\n', '').replace('  ', '')[17:]
+                    
+                    corpo = soup.find('div', class_='panes-condensed panes-w-ads content-ext-guide content-mark', recursive=True)
+                    if corpo:
+                        brocardi_sections = soup.find_all('div', class_='brocardi-content')
+                        if brocardi_sections:
+                            brocardi_texts = [broc.text.strip() for broc in brocardi_sections]
+                            info['Brocardi'] = brocardi_texts
+
+
+                        ratio_section = soup.find('div', class_='container-ratio')
+                        if ratio_section:
+                            ratio_text = ratio_section.find('div', class_='corpoDelTesto')
+                            if ratio_text:
+                                info['Ratio'] = ratio_text.text.strip()
+                        
+                        spiegazione_header = soup.find('h3', string=lambda text: 'Spiegazione dell\'art' in text)
+                        if spiegazione_header:
+                            spiegazione_content = spiegazione_header.find_next_sibling('div', class_='text')
+                            if spiegazione_content:
+                                info['Spiegazione'] = spiegazione_content.text.strip()
+                        
+                        massime_header = soup.find('h3', string=lambda text: 'Massime relative all\'art' in text)
+                        if massime_header:
+                            massime_content = massime_header.find_next_sibling('div', class_='text')
+                            if massime_content:
+                                info['Massime'] = massime_content.text.strip()
+                            
+                    return position, info, norma_link
+            else:
+                return False
 
     def search_brocardi(self, search_term):
         """

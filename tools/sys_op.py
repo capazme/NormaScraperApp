@@ -72,7 +72,6 @@ def close_driver():
         driver.quit()
         driver = None
 
-
 @lru_cache(maxsize=MAX_CACHE_SIZE)
 def complete_date(act_type, date, act_number):
     try:    
