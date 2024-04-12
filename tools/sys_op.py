@@ -91,7 +91,6 @@ def complete_date(act_type, date, act_number):
     except Exception as e:
         return f"Errore nel completamento della data, inserisci la data completa: {e}" 
 
-
 def xml_to_html(xml_file_path):
     with open(xml_file_path, 'r', encoding='utf-8') as file:
         xml_str = file.read()

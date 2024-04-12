@@ -9,6 +9,7 @@ import pyperclip
 from tools import sys_op
 from tools.config import ConfigurazioneDialog
 import os
+import threading
 import sys
 from BrocardiScraper import BrocardiScraper
 
@@ -109,6 +110,7 @@ class NormaScraperApp:
         self.create_operation_buttons()
         self.create_output_area()
         self.create_history_buttons()
+        self.create_progress_bar()
         
         self.brocardi_button = ttkb.Button(self.mainframe, text="Brocardi")
         self.brocardi_button.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
@@ -237,6 +239,10 @@ class NormaScraperApp:
             dec_button.grid(row=row, column=4, padx=2, pady=2, sticky=tk.E)
 
         return entry
+    
+    def create_progress_bar(self):
+        self.progress_bar = ttkb.Progressbar(self.mainframe, orient="horizontal", length=300, mode='determinate', style='success.Striped.Horizontal.TProgressbar')
+        self.progress_bar.grid(row=12, column=0, columnspan=4, pady=10, padx=5, sticky="ew")
 
 
 #
@@ -423,11 +429,19 @@ class NormaScraperApp:
 # OUTPUT
 #
     def fetch_act_data(self, save_xml_path=None):
+        threading.Thread(target=self._fetch_act_data, args=(save_xml_path,), daemon=True).start()
+
+    def fetch_act_data(self, save_xml_path=None):
+    # Avvia un thread per l'operazione di lunga durata
+        threading.Thread(target=self._fetch_act_data, args=(save_xml_path,), daemon=True).start()
+
+    def _fetch_act_data(self, save_xml_path=None):
+        self.root.after(50, self.progress_bar.start)  # Avvia la barra di progresso nel thread principale
+
         act_type = self.act_type_combobox.get()  
         date = self.date_entry.get()
         act_number = self.act_number_entry.get()
         article = self.article_entry.get()
-        #extension = self.extension_entry.get()
         version = self.version_var.get()
         version_date = self.version_date_entry.get()
         comma = self.comma_entry.get()
@@ -437,16 +451,19 @@ class NormaScraperApp:
         
         try:
             data, url, norma = sys_op.get_urn_and_extract_data(act_type=act_type, date=date, act_number=act_number, article=article, comma=comma, version=version, version_date=version_date, save_xml_path=save_xml_path)
-            self.output_text.delete('1.0', tk.END)
-            self.output_text.insert(tk.END, data)
-            self.crea_link("Apri URN Normattiva", url, 9, 1)
-            self.aggiungi_a_cronologia(norma)
-            self.check_brocardi(norma)
-                
-
+            self.root.after(50, lambda: self.display_results(data, url, norma))
         except Exception as e:
-            messagebox.showerror("Errore", str(e))
+            self.root.after(50, lambda: messagebox.showerror("Errore", str(e)))
+        finally:
+            self.root.after(50, self.progress_bar.stop)  # Ferma la barra di progresso nel thread principale
 
+    def display_results(self, data, url, norma):
+        self.output_text.delete('1.0', tk.END)
+        self.output_text.insert(tk.END, data)
+        self.crea_link("Apri URN Normattiva", url, 9, 1)
+        self.aggiungi_a_cronologia(norma)
+        self.check_brocardi(norma)
+    
     def check_brocardi(self, norma):
         result = self.brocardi.look_up(norma)
         if result:
