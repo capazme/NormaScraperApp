@@ -52,7 +52,8 @@ def normalize_act_type(input_type, search = False, source = 'normattiva'):
     elif source=='brocardi':
         if search==True:
             act_types = BROCARDI_SEARCH
-    
+        #elif search==False:
+            
     input_type = input_type.lower().strip()
     # Improved logic to ensure accurate mapping
     for key, value in act_types.items():

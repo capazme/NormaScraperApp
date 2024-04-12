@@ -429,6 +429,9 @@ class NormaScraperApp:
         version_date = self.version_date_entry.get()
         comma = self.comma_entry.get()
         
+        if save_xml_path:
+            article = None
+        
         try:
             data, url, norma = sys_op.get_urn_and_extract_data(act_type=act_type, date=date, act_number=act_number, article=article, comma=comma, version=version, version_date=version_date, save_xml_path=save_xml_path)
             self.output_text.delete('1.0', tk.END)

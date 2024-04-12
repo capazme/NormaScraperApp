@@ -47,21 +47,25 @@ class BrocardiScraper:
     def look_up(self, norma):
         if isinstance(norma, NormaVisitata):
             # Assumendo che do_know ritorni una tupla con il link come secondo elemento
+            print(norma)
             norma_info = self.do_know(norma)
+            print(norma_info)
             if norma_info:
                 link = norma_info[1]
                 numero_articolo = norma.to_dict()['numero_articolo']
-                components = [link, f"art{numero_articolo}.html"]
-                
-                # Costruisci il pattern usando il primo e l'ultimo componente
+                if '-' in numero_articolo:
+                    numero_articolo = numero_articolo.replace('-', '')
+                print(numero_articolo)
+                components = [link, f"art{numero_articolo}.html" if numero_articolo else None]
+                print(components)
+                # Costrui  ci il pattern usando il primo e l'ultimo componente
                 start, end = components[0], components[1]
                 # La regex qui sotto assume che tra l'inizio e la fine possa esserci qualsiasi cosa
-                pattern = re.compile(re.escape(start) + r".*" + re.escape(end), re.DOTALL)
+                pattern = re.compile(re.escape(start) + r".*" + re.escape(end))
 
                 # Cerca corrispondenze nel dizionario
                 for key, value in self.knowledge[1].items():
-                    if re.search(pattern, value):
-                        print(f"Found: {value}")
+                    if re.search(pattern, value.lower()):
                         return value
 
                 print("No match found.")
@@ -78,14 +82,14 @@ class BrocardiScraper:
         url = self.links.get(search_term)
         return url if url else "No brocardi link available for this term."
 
-brocardi_scraper = BrocardiScraper()
+#brocardi_scraper = BrocardiScraper()
 
 
-data_atto = "6 settembre 2011"
-numero_atto = "159" 
-articolo_atto = "1" 
-tipo_atto = "D.lgs."
-
-norma = NormaVisitata(tipo_atto=tipo_atto, numero_atto=numero_atto, numero_articolo=articolo_atto, data=data_atto)
-
-print (brocardi_scraper.look_up(norma))
+#data_atto = ""
+#numero_atto = "" 
+#articolo_atto = "94-bis" 
+#tipo_atto = "codice della strada"
+#
+#norma = NormaVisitata(tipo_atto=tipo_atto, numero_atto=numero_atto, numero_articolo=articolo_atto, data=data_atto)
+#
+#print (brocardi_scraper.look_up(norma))

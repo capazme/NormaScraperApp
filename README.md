@@ -19,13 +19,11 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![C00-1.0 License][license-shield]][license-url]
-
-
+[Contributors][contributors-url]
+[Forks][forks-url]
+[Stargazers][stars-url]
+[Issues][issues-url]
+[C00-1.0 License][license-url]
 
 <!-- PROJECT LOGO -->
 
@@ -135,7 +133,8 @@ To get a local copy up and running follow these simple example steps.
 1. Clona la repository
 2. ```sh
    git clone https://github.com/capazme/NormaScraperApp.git
-   ```
+```
+
 3. Istalla le librerie python necessarie
    ```sh
    pip install -r resources/requirements.txt
@@ -208,11 +207,11 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
 ## Roadmap
 
 - [ ] Brocardi implementation
-    - [ ] Aggiunta link articoli rilevanti
-    - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
+  - [ ] Aggiunta link articoli rilevanti
+  - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
 - [ ] Altalex implementation
-    - [ ] Altalexpedia
-- [ ] 
+  - [ ] Altalexpedia
+- [ ]
 
 See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a full list of proposed features (and known issues).
 
@@ -221,6 +220,13 @@ See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a f
 <!-- CONTRIBUTING -->
 
 ## Contributing
+
+# KNOWN ISSUES
+* La ricerca con data incompleta è più lenta di quella con la data completa (ma solo al primo caricamento, in cronologia è salvata sempre la data completa)
+* Lo scorrimmento degli articoli non supporta le estensioni (-bis, ter etc...)
+* Alcuni codici di brocardi sono incompleti (es. titolo I codice della strada)
+* Commi non supportati per i codici (e occasionalmente alcuni decreti formattati male)
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

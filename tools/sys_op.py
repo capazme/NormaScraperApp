@@ -144,6 +144,8 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
         
         if extension:
             urn += extension
+        else:
+            extension=''
                 
     if version == "originale":
         urn += "@originale"
@@ -153,7 +155,7 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
             formatted_version_date = parse_date(version_date)
             urn += formatted_version_date
     act_type_for_cron = normalize_act_type(act_type, search=True)
-    norma = NormaVisitata(tipo_atto=act_type_for_cron, data=date, numero_atto=act_number, numero_articolo=article, url=base_url+urn)
+    norma = NormaVisitata(tipo_atto=act_type_for_cron, data=date, numero_atto=act_number, numero_articolo=article+extension if article else None, url=base_url+urn)
     return base_url + urn, norma
 
 @lru_cache(maxsize=100)
@@ -170,6 +172,7 @@ def export_xml(driver, urn, timeout, annex):
     xml_data = driver.page_source
     return xml_data
 
+@lru_cache(maxsize=100)
 def save_xml(xml_data, save_xml_path):
     with open(save_xml_path, 'w', encoding='utf-8') as file:
         file.write(xml_data)
