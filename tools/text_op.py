@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import re
 import datetime
 from functools import lru_cache
+from .map import NORMATTIVA, NORMATTIVA_SEARCH, BROCARDI_SEARCH
 
 def nospazi(text):
     textlist = text.split()
@@ -38,230 +39,27 @@ def parse_date(input_date):
     except ValueError:
         raise ValueError("Formato data non valido")
 
-def normalize_act_type(input_type, search = False):
+def normalize_act_type(input_type, search = False, source = 'normattiva'):
     """
     Normalizes the type of legislative act based on a variable input.
     """
-    if search==True:
-            act_types  = {
-        "d.lgs.": "decreto legislativo",
-        "decreto legge": "decreto legge",
-        "decreto legislativo": "decreto legislativo",
-        "decreto.legge": "decreto legge",
-        "decreto.legislativo": "decreto legislativo",
-        "dl": "decreto legge",
-        "dlgs": "decreto legislativo",
-        "l": "legge",
-        "l.": "legge",
-        "legge": "legge",
-        "c.c.": "codice civile",
-        "c.p.": "codice penale",
-        "c.p.c": "codice di procedura civile",
-        "c.p.p.": "codice di procedura penale",
-        "cad": "codice dell'amministrazione digitale",
-        "cam": "codice antimafia",
-        "camb": "norme in materia ambientale",
-        "cap": "codice delle assicurazioni private",
-        "cbc": "codice dei beni culturali e del paesaggio",
-        "cc": "codice civile",
-        "cce": "codice delle comunicazioni elettroniche",
-        "cci": "codice della crisi d'impresa e dell'insolvenza",
-        "ccp": "codice dei contratti pubblici",
-        "cdc": "codice del consumo",
-        "cdpc": "codice della protezione civile",
-        "cds": "codice della strada",
-        "cgco": "codice di giustizia contabile",
-        "cn": "codice della navigazione",
-        "cnd": "codice della nautica da diporto",
-        "cod. amm. dig.": "codice dell'amministrazione digitale",
-        "cod. antimafia": "codice antimafia",
-        "cod. ass. priv.": "codice delle assicurazioni private",
-        "cod. beni cult.": "codice dei beni culturali e del paesaggio",
-        "cod. civ.": "codice civile",
-        "cod. com. elet.": "codice delle comunicazioni elettroniche",
-        "cod. consumo": "codice del consumo",
-        "cod. contr. pubb.": "codice dei contratti pubblici",
-        "cod. crisi imp.": "codice della crisi d'impresa e dell'insolvenza",
-        "cod. giust. cont.": "codice di giustizia contabile",
-        "cod. naut. diport.": "codice della nautica da diporto",
-        "cod. nav.": "codice della navigazione",
-        "cod. ord. mil.": "codice dell'ordinamento militare",
-        "cod. pari opp.": "codice delle pari opportunità",
-        "cod. pen.": "codice penale",
-        "cod. post. telecom.": "codice postale e delle telecomunicazioni",
-        "cod. proc. amm.": "codice del processo amministrativo",
-        "cod. proc. civ": "codice di procedura civile",
-        "cod. proc. pen.": "codice di procedura penale",
-        "cod. proc. trib.": "codice del processo tributario",
-        "cod. prop. ind.": "codice della proprietà industriale",
-        "cod. prot. civ.": "codice della protezione civile",
-        "cod. prot. dati": "codice in materia di protezione dei dati personali",
-        "cod. strada": "codice della strada",
-        "cod. ter. sett.": "codice del Terzo settore",
-        "cod. turismo": "codice del turismo",
-        "codice antimafia": "codice antimafia",
-        "codice civile": "codice civile",
-        "codice dei beni culturali e del paesaggio": "codice dei beni culturali e del paesaggio",
-        "codice dei contratti pubblici": "codice dei contratti pubblici",
-        "codice del Terzo settore": "codice del Terzo settore",
-        "codice del consumo": "codice del consumo",
-        "codice del processo amministrativo": "codice del processo amministrativo",
-        "codice del processo tributario": "codice del processo tributario",
-        "codice del turismo": "codice del turismo",
-        "codice dell'amministrazione digitale": "codice dell'amministrazione digitale",
-        "codice dell'ordinamento militare": "codice dell'ordinamento militare",
-        "codice della crisi d'impresa e dell'insolvenza": "codice della crisi d'impresa e dell'insolvenza",
-        "codice della nautica da diporto": "codice della nautica da diporto",
-        "codice della navigazione": "codice della navigazione",
-        "codice della proprietà industriale": "codice della proprietà industriale",
-        "codice della protezione civile": "codice della protezione civile",
-        "codice della strada": "codice della strada",
-        "codice delle assicurazioni private": "codice delle assicurazioni private",
-        "codice delle comunicazioni elettroniche": "codice delle comunicazioni elettroniche",
-        "codice delle pari opportunità": "codice delle pari opportunità",
-        "codice di giustizia contabile": "codice di giustizia contabile",
-        "codice di procedura civile": "codice di procedura civile",
-        "codice di procedura penale": "codice di procedura penale",
-        "codice in materia di protezione dei dati personali": "codice in materia di protezione dei dati personali",
-        "codice penale": "codice penale",
-        "codice postale e delle telecomunicazioni": "codice postale e delle telecomunicazioni",
-        "com": "codice dell'ordinamento militare",
-        "cost": "costituzione",
-        "cost.": "costituzione",
-        "costituzione": "costituzione",
-        "cp": "codice penale",
-        "cpa": "codice del processo amministrativo",
-        "cpc": "codice di procedura civile",
-        "cpd": "codice in materia di protezione dei dati personali",
-        "cpet": "codice postale e delle telecomunicazioni",
-        "cpi": "codice della proprietà industriale",
-        "cpo": "codice delle pari opportunità",
-        "cpp": "codice di procedura penale",
-        "cpt": "codice del processo tributario",
-        "cts": "codice del Terzo settore",
-        "ctu": "codice del turismo",
-        "disp. att. c.c.": "disposizioni per l'attuazione del Codice civile e disposizioni transitorie",
-        "disp. att. c.p.c.": "disposizioni per l'attuazione del Codice di procedura civile e disposizioni transitorie",
-        "disp. prel.": "preleggi",
-        "disposizioni per l'attuazione del Codice civile e disposizioni transitorie": "disposizioni per l'attuazione del Codice civile e disposizioni transitorie",
-        "disposizioni per l'attuazione del Codice di procedura civile e disposizioni transitorie": "disposizioni per l'attuazione del Codice di procedura civile e disposizioni transitorie",
-        "norme amb.": "norme in materia ambientale",
-        "norme in materia ambientale": "norme in materia ambientale",
-        "prel.": "preleggi",
-        "preleggi": "preleggi"}
-    elif search==False:
-        act_types  = {
-        "d.lgs.": "decreto.legislativo",
-        "decreto legge": "decreto.legge",
-        "decreto legislativo": "decreto.legislativo",
-        "decreto.legge": "decreto.legge",
-        "decreto.legislativo": "decreto.legislativo",
-        "dl": "decreto.legge",
-        "dlgs": "decreto.legislativo",
-        "l": "legge",
-        "l.": "legge",
-        "legge": "legge",
-        "c.c.": "codice civile",
-        "c.p.": "codice penale",
-        "c.p.c": "codice di procedura civile",
-        "c.p.p.": "codice di procedura penale",
-        "cad": "codice dell'amministrazione digitale",
-        "cam": "codice antimafia",
-        "camb": "norme in materia ambientale",
-        "cap": "codice delle assicurazioni private",
-        "cbc": "codice dei beni culturali e del paesaggio",
-        "cc": "codice civile",
-        "cce": "codice delle comunicazioni elettroniche",
-        "cci": "codice della crisi d'impresa e dell'insolvenza",
-        "ccp": "codice dei contratti pubblici",
-        "cdc": "codice del consumo",
-        "cdpc": "codice della protezione civile",
-        "cds": "codice della strada",
-        "cgco": "codice di giustizia contabile",
-        "cn": "codice della navigazione",
-        "cnd": "codice della nautica da diporto",
-        "cod. amm. dig.": "codice dell'amministrazione digitale",
-        "cod. antimafia": "codice antimafia",
-        "cod. ass. priv.": "codice delle assicurazioni private",
-        "cod. beni cult.": "codice dei beni culturali e del paesaggio",
-        "cod. civ.": "codice civile",
-        "cod. com. elet.": "codice delle comunicazioni elettroniche",
-        "cod. consumo": "codice del consumo",
-        "cod. contr. pubb.": "codice dei contratti pubblici",
-        "cod. crisi imp.": "codice della crisi d'impresa e dell'insolvenza",
-        "cod. giust. cont.": "codice di giustizia contabile",
-        "cod. naut. diport.": "codice della nautica da diporto",
-        "cod. nav.": "codice della navigazione",
-        "cod. ord. mil.": "codice dell'ordinamento militare",
-        "cod. pari opp.": "codice delle pari opportunità",
-        "cod. pen.": "codice penale",
-        "cod. post. telecom.": "codice postale e delle telecomunicazioni",
-        "cod. proc. amm.": "codice del processo amministrativo",
-        "cod. proc. civ": "codice di procedura civile",
-        "cod. proc. pen.": "codice di procedura penale",
-        "cod. proc. trib.": "codice del processo tributario",
-        "cod. prop. ind.": "codice della proprietà industriale",
-        "cod. prot. civ.": "codice della protezione civile",
-        "cod. prot. dati": "codice in materia di protezione dei dati personali",
-        "cod. strada": "codice della strada",
-        "cod. ter. sett.": "codice del Terzo settore",
-        "cod. turismo": "codice del turismo",
-        "codice antimafia": "codice antimafia",
-        "codice civile": "codice civile",
-        "codice dei beni culturali e del paesaggio": "codice dei beni culturali e del paesaggio",
-        "codice dei contratti pubblici": "codice dei contratti pubblici",
-        "codice del Terzo settore": "codice del Terzo settore",
-        "codice del consumo": "codice del consumo",
-        "codice del processo amministrativo": "codice del processo amministrativo",
-        "codice del processo tributario": "codice del processo tributario",
-        "codice del turismo": "codice del turismo",
-        "codice dell'amministrazione digitale": "codice dell'amministrazione digitale",
-        "codice dell'ordinamento militare": "codice dell'ordinamento militare",
-        "codice della crisi d'impresa e dell'insolvenza": "codice della crisi d'impresa e dell'insolvenza",
-        "codice della nautica da diporto": "codice della nautica da diporto",
-        "codice della navigazione": "codice della navigazione",
-        "codice della proprietà industriale": "codice della proprietà industriale",
-        "codice della protezione civile": "codice della protezione civile",
-        "codice della strada": "codice della strada",
-        "codice delle assicurazioni private": "codice delle assicurazioni private",
-        "codice delle comunicazioni elettroniche": "codice delle comunicazioni elettroniche",
-        "codice delle pari opportunità": "codice delle pari opportunità",
-        "codice di giustizia contabile": "codice di giustizia contabile",
-        "codice di procedura civile": "codice di procedura civile",
-        "codice di procedura penale": "codice di procedura penale",
-        "codice in materia di protezione dei dati personali": "codice in materia di protezione dei dati personali",
-        "codice penale": "codice penale",
-        "codice postale e delle telecomunicazioni": "codice postale e delle telecomunicazioni",
-        "com": "codice dell'ordinamento militare",
-        "cost": "costituzione",
-        "cost.": "costituzione",
-        "costituzione": "costituzione",
-        "cp": "codice penale",
-        "cpa": "codice del processo amministrativo",
-        "cpc": "codice di procedura civile",
-        "cpd": "codice in materia di protezione dei dati personali",
-        "cpet": "codice postale e delle telecomunicazioni",
-        "cpi": "codice della proprietà industriale",
-        "cpo": "codice delle pari opportunità",
-        "cpp": "codice di procedura penale",
-        "cpt": "codice del processo tributario",
-        "cts": "codice del Terzo settore",
-        "ctu": "codice del turismo",
-        "disp. att. c.c.": "disposizioni per l'attuazione del Codice civile e disposizioni transitorie",
-        "disp. att. c.p.c.": "disposizioni per l'attuazione del Codice di procedura civile e disposizioni transitorie",
-        "disp. prel.": "preleggi",
-        "disposizioni per l'attuazione del Codice civile e disposizioni transitorie": "disposizioni per l'attuazione del Codice civile e disposizioni transitorie",
-        "disposizioni per l'attuazione del Codice di procedura civile e disposizioni transitorie": "disposizioni per l'attuazione del Codice di procedura civile e disposizioni transitorie",
-        "norme amb.": "norme in materia ambientale",
-        "norme in materia ambientale": "norme in materia ambientale",
-        "prel.": "preleggi",
-        "preleggi": "preleggi"}
+    
+    if source == 'normattiva':
+        if search==True:
+                act_types = NORMATTIVA_SEARCH
+        elif search==False:
+            act_types = NORMATTIVA
+    elif source=='brocardi':
+        if search==True:
+            act_types = BROCARDI_SEARCH
     
     input_type = input_type.lower().strip()
     # Improved logic to ensure accurate mapping
     for key, value in act_types.items():
         if input_type == key or input_type == key.replace(" ", ""): 
             return value
+        else:
+            return input_type
     raise ValueError("Tipo di atto non riconosciuto")
 
 def estrai_data_da_denominazione(denominazione):
@@ -312,45 +110,51 @@ def estrai_da_xml(atto, num_articolo, est_articolo, comma, annesso):
     try:
         soup = BeautifulSoup(atto, 'xml')
         
+        # Handling 'annesso' extraction
         if annesso:
-            soup = soup.find('annesso', {'id': str(annesso)})
-            return soup.get_text(separator="\n", strip=True)
+            annesso_soup = soup.find('annesso', {'id': str(annesso)})
+            return annesso_soup.get_text(separator="\n", strip=True) if annesso_soup else "Annesso non trovato."
 
-
-        if  num_articolo:
-            articoli = soup.find_all('articolo', {'id': str(num_articolo)}) 
-            #print(articoli) 
+        articoli_text = []
+        # Handling 'articolo' extraction
+        if num_articolo:
+            articoli = soup.find_all('articolo', {'id': str(num_articolo)})
             if not articoli:
                 return "Nessun articolo trovato."
 
             # Selezionare l'articolo corretto in presenza di estensioni
+            articolo = None
             if est_articolo:
                 indice_estensione = estrai_numero_da_estensione(est_articolo)
-                if indice_estensione >= len(articoli):
+                if indice_estensione > len(articoli):
                     return "Estensione dell'articolo non trovata."
                 articolo = articoli[indice_estensione-1]
             else:
                 articolo = articoli[0]
 
             corpo = articolo.find('corpo')
-            # Gestione del comma
+            # Handling 'comma' extraction
             if comma is not None:
-                comma_elements = corpo.find_all('h:p') #ERRORE nella formattazione ordinaria di Normattiva
+                comma_elements = corpo.find_all('h:p')  # Assuming 'h:p' is the correct tag for 'comma'
+                commi_text = []
                 for p in comma_elements:
-                    if p.get_text().startswith(f'{comma}. ') or p.get_text().startswith(f'{comma}. ', 2) :
-                        return p.get_text(separator="\n", strip=True)
+                    if p.get_text().strip().startswith(f'{comma}.'):
+                        commi_text.append(p.get_text(separator="\n", strip=True))
+                return "\n".join(commi_text) if commi_text else "Comma non trovato."
             else:
-                return articolo.get_text(separator="\n", strip=True)
+                return corpo.get_text(separator="\n", strip=True) if corpo else "Corpo dell'articolo non trovato."
         else:
-            arts = []
+            # If no specific article is requested, return all articles' text
             articoli = soup.find_all('articolo')
-            for a in articoli:
-                for tag_num in a.find_all('num'):
+            for articolo in articoli:
+                for tag_num in articolo.find_all('num'):
                     tag_num.decompose()
-                arts.append(a.get_text(separator="\n", strip=True))
-            return ''.join(arts)
+                articoli_text.append(articolo.get_text(separator="\n", strip=True))
+            return "\n".join(articoli_text) if articoli_text else "Nessun articolo presente."
+
     except Exception as e:
-        return f"Errore generico: {e}" 
+        return f"Errore durante l'estrazione: {e}"
+
 
 @lru_cache(maxsize=100)
 def estrai_da_html(atto, comma):
@@ -381,17 +185,3 @@ def conta_articoli(atto_xlm):
     """
     soup = BeautifulSoup(atto_xlm, 'lxml-xml')
     return len(soup.find_all('articolo'))
-
-def estrai_testi_articoli(atto_xlm):
-    """
-    Estrae il testo di tutti gli articoli presenti in un documento XML.
-
-    Args:
-        atto_xlm (str): I dati XML contenenti gli articoli.
-
-    Returns:
-        Una lista contenente il testo di ciascun articolo nel documento.
-    """
-    numero_articoli = conta_articoli(atto_xlm)
-    articoli = [estrai_testo_articolo(atto_xlm, i+1) for i in range(numero_articoli)]
-    return articoli

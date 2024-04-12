@@ -3,3 +3,8 @@ old_version
 build.sh
 *.app
 __pycache__
+merge.py
+crawl.py
+links.json
+superlink.json
+file.txt

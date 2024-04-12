@@ -2,7 +2,7 @@ import ttkbootstrap as ttkb
 from ttkbootstrap.constants import *
 import json
 import tkinter as tk
-from tkinter import messagebox, scrolledtext, filedialog, Menu, simpledialog, Toplevel, StringVar
+from tkinter import messagebox, filedialog, Menu, simpledialog, Toplevel, StringVar
 from tkinter.filedialog import askdirectory
 import webbrowser
 import pyperclip
@@ -10,6 +10,7 @@ from tools import sys_op
 from tools.config import ConfigurazioneDialog
 import os
 import sys
+from BrocardiScraper import BrocardiScraper
 
 CURRENT_APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -38,10 +39,6 @@ class Tooltip:
             self.tip_window.destroy()
             self.tip_window = None
 
-
-
-
-
 class NormaScraperApp:
 #
 # SETUP
@@ -57,6 +54,7 @@ class NormaScraperApp:
         self.cronologia = []
         self.finestra_cronologia = None
         self.finestra_readme = None
+        self.brocardi = BrocardiScraper()
         # self.updater = self.configure_updater()  # Uncomment and configure if updater is used
 
     def configure_root(self):
@@ -94,11 +92,11 @@ class NormaScraperApp:
     def setup_style(self):
         style = ttkb.Style()
         style.theme_use('flatly')  # Change theme here if needed
-        font_configs = ('Helvetica', self.font_size)
-        style.configure('TButton', font=font_configs)
-        style.configure('TEntry', padding=5, font=font_configs)
-        style.configure('TLabel', font=font_configs)
-        style.configure('TRadiobutton', font=font_configs)
+        self.font_configs = ('Helvetica', self.font_size)
+        style.configure('TButton', font= self.font_configs)
+        style.configure('TEntry', padding=5, font= self.font_configs)
+        style.configure('TLabel', font= self.font_configs)
+        style.configure('TRadiobutton', font= self.font_configs)
 
     def create_widgets(self):
         self.mainframe = ttkb.Frame(self.root, padding="3 3 12 12")
@@ -108,9 +106,14 @@ class NormaScraperApp:
         self.create_operation_buttons()
         self.create_output_area()
         self.create_history_buttons()
+        
+        self.brocardi_button = ttkb.Button(self.mainframe, text="Brocardi")
+        self.brocardi_button.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
+        self.brocardi_button.grid_remove()
 
     def configure_mainframe(self):
         self.mainframe.grid(column=0, row=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.root.geometry('800x800')  
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
         for i in range(4):
@@ -197,7 +200,7 @@ class NormaScraperApp:
     
     def create_output_area(self):
         # Create scrolled text area for output
-        self.output_text = scrolledtext.ScrolledText(self.mainframe, wrap=tk.WORD)
+        self.output_text = ttkb.ScrolledText(self.mainframe, wrap=tk.WORD)
         self.output_text.grid(row=10, column=0, columnspan=4, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
 
     def create_history_buttons(self):
@@ -231,12 +234,6 @@ class NormaScraperApp:
             dec_button.grid(row=row, column=4, padx=2, pady=2, sticky=tk.E)
 
         return entry
-
-
-    
-
-
-
 
 
 #
@@ -438,10 +435,20 @@ class NormaScraperApp:
             self.output_text.insert(tk.END, data)
             self.crea_link("Apri URN Normattiva", url, 9, 1)
             self.aggiungi_a_cronologia(norma)
+            self.check_brocardi(norma)
+                
 
         except Exception as e:
             messagebox.showerror("Errore", str(e))
 
+    def check_brocardi(self, norma):
+        result = self.brocardi.do_know(norma)
+        if result:
+            self.brocardi_button.grid()  # Mostra il pulsante
+            self.brocardi_button.configure(command=lambda: self.apri_url(result[1]))
+        else:
+            self.brocardi_button.grid_remove()
+        
     def crea_link(self, text, url, row, column):
         link = tk.Label(self.mainframe, text=text, fg="blue", cursor="hand2")
         link.bind("<Button-1>", lambda e: self.apri_url(url))
