@@ -19,11 +19,11 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-[![Contributors][contributors-url]]
-[![Forks][forks-url]]
-[![Stargazers][stars-url]]
-[![Issues][issues-url]]
-[![C00-1.0 License][license-url]]
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![CC0-1.0 License][license-shield]][license-url]
 
 <!-- PROJECT LOGO -->
 
@@ -88,7 +88,7 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
   ├── LICENSE.txt
   ├── NormaScraper-Betav0.7.1.zip
   ├── NormaScraper.py
-  ├── brocardiScraper.py
+  ├── BrocardiScraper.py
   ├── README.md
   ├── atti_scaricati
   │   ├── cost.xml
