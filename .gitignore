@@ -1,6 +1,5 @@
-old_version
+old_version/NormaScraper*
 .DS_Store
-build.sh
 *.app
 __pycache__
 merge.py
@@ -8,3 +7,4 @@ crawl.py
 links.json
 superlink.json
 file.txt
+req.py

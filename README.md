@@ -88,6 +88,7 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
   ├── LICENSE.txt
   ├── NormaScraper-Betav0.7.1.zip
   ├── NormaScraper.py
+  ├── brocardiScraper.py
   ├── README.md
   ├── atti_scaricati
   │   ├── cost.xml
@@ -108,6 +109,7 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
       ├── .index
       └── cron
           ├── .index
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -119,30 +121,83 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
 
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
-
 ### Prerequisites
 
-#### Nessun prerequisito per l'applicazione contenuta nel file .zip.
+**Nessun prerequisito per l'applicazione contenuta nel file .zip.**
 
-#### Python e pip sono necessari per costruire dalla fonte.
+**Python e pip sono necessari per costruire dalla fonte.**
 
-### Installation
+### Easy installation (Pre-builded)
+
+1. Scarica il file NormaScraper-vX.zip
+2. Estrai il contenuto dall'archivio
+3. Esegui l'app pre-buildata
+
+### Build from source
+
+!! Assicurati di avere python e pip installati !!
 
 1. Clona la repository
-2. ```sh
+
+   ```shell
    git clone https://github.com/capazme/NormaScraperApp.git
+   ```
+2. Installa le librerie pytho necessarie
+
+```shell
+   pip install -r resources/requirements.txt
 ```
 
-3. Istalla le librerie python necessarie
-   ```sh
-   pip install -r resources/requirements.txt
-   ```
-4. Avvia NormaScraper.py con python 3.12 o superiore
-   ```sh
-   python -m NormaScraper.py
-   ```
+    3. Avvia NormaScraper.py con python 3.12 o superiore
+
+```sh
+python -m NormaScraper.py
+```
+
+5. Oppure utilizza il file build.sh per ottenere un file eseguibile
+   Questo script accetta vari flag che influenzano la versione e il comportamento della build:
+
+   --up: Aumenta la versione minore di 0.1.
+   --upup: Aumenta la versione maggiore di 1.
+   --noup: Non aumenta la versione durante questa compilazione.
+   --clean: Pulisce i file generati dalle compilazioni precedenti, senza rimuovere le versioni precedenti dell'app.
+   --cleanhard: Pulisce i file generati dalle compilazioni precedenti e rimuove le versioni precedenti dell'app.
+   Per eseguire una compilazione standard che incrementa automaticamente la versione patch di 0.0.1, usa il seguente comando:
+
+```bash
+./build.sh
+```
+
+Se desideri mantenere la stessa versione e solo ricompilare l'app, puoi usare:
+
+```bash
+./build.sh --noup
+```
+
+#### Incremento della Versione
+
+Per specificare manualmente il tipo di incremento della versione:
+
+```bash
+./build.sh --up    # Incrementa la versione minore
+./build.sh --upup  # Incrementa la versione maggiore
+```
+
+#### Pulizia
+
+Per pulire la directory di build senza rimuovere le versioni precedenti:
+
+```bash
+./build.sh --clean
+```
+
+Per una pulizia completa che include la rimozione delle versioni vecchie:
+
+```bash
+./build.sh --cleanhard
+```
+
+L'app compilata verrà spostata nella directory principale del progetto, e tutti i file temporanei saranno eliminati dopo la compilazione."
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -222,11 +277,11 @@ See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a f
 ## Contributing
 
 # KNOWN ISSUES
+
 * La ricerca con data incompleta è più lenta di quella con la data completa (ma solo al primo caricamento, in cronologia è salvata sempre la data completa)
 * Lo scorrimmento degli articoli non supporta le estensioni (-bis, ter etc...)
 * Alcuni codici di brocardi sono incompleti (es. titolo I codice della strada)
 * Commi non supportati per i codici (e occasionalmente alcuni decreti formattati male)
-
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
