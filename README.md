@@ -19,11 +19,11 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-[Contributors][contributors-url]
-[Forks][forks-url]
-[Stargazers][stars-url]
-[Issues][issues-url]
-[C00-1.0 License][license-url]
+[![Contributors][contributors-url]]
+[![Forks][forks-url]]
+[![Stargazers][stars-url]]
+[![Issues][issues-url]]
+[![C00-1.0 License][license-url]]
 
 <!-- PROJECT LOGO -->
 
