@@ -12,6 +12,8 @@ from .text_op import estrai_testo_articolo, parse_date, normalize_act_type, estr
 from functools import lru_cache
 from .map import NORMATTIVA_URN_CODICI
 
+MAX_CACHE_SIZE = 1000
+
 class NormaVisitata:
     def __init__(self, tipo_atto, data=None, numero_atto=None, numero_articolo=None, url=None):
         self.tipo_atto_str = normalize_act_type(tipo_atto, search=True)
@@ -52,18 +54,29 @@ class NormaVisitata:
     def from_dict(data):
         return NormaVisitata(**data)
     
+driver = None
+
 def setup_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920x1080")
-    driver = webdriver.Chrome(options=chrome_options)
+    global driver
+    if driver is None:
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--window-size=1920x1080")
+        driver = webdriver.Chrome(options=chrome_options)
     return driver
 
-@lru_cache(maxsize=100)
+def close_driver():
+    global driver
+    if driver:
+        driver.quit()
+        driver = None
+
+
+@lru_cache(maxsize=MAX_CACHE_SIZE)
 def complete_date(act_type, date, act_number):
     try:    
-        driver = setup_driver()
+        #driver = setup_driver()
         driver.get("https://www.normattiva.it/")
         search_box = driver.find_element(By.CSS_SELECTOR, ".form-control.autocomplete.bg-transparent")  # Assicurati che il selettore sia corretto
         search_criteria = f"{act_type} {act_number} {date}"
@@ -73,7 +86,7 @@ def complete_date(act_type, date, act_number):
         elemento_text = elemento.text
         #messagebox.showinfo("Completamento data", f'{elemento_text}')
         data_completa = estrai_data_da_denominazione(elemento_text)
-        driver.quit()
+        #driver.quit()
         return data_completa
     except Exception as e:
         return f"Errore nel completamento della data, inserisci la data completa: {e}" 
@@ -104,7 +117,7 @@ def xml_to_html(xml_file_path):
     # Unione dei componenti HTML in una singola stringa
     return ''.join(html_content)
 
-@lru_cache(maxsize=100)
+@lru_cache(maxsize=MAX_CACHE_SIZE)
 def generate_urn(act_type, date=None, act_number=None, article=None, extension=None, version=None, version_date=None):
     """
     Genera un URL per Normattiva basandosi sui parametri forniti.
@@ -158,7 +171,7 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
     norma = NormaVisitata(tipo_atto=act_type_for_cron, data=date, numero_atto=act_number, numero_articolo=article+extension if article else None, url=base_url+urn)
     return base_url + urn, norma
 
-@lru_cache(maxsize=100)
+@lru_cache(maxsize=MAX_CACHE_SIZE)
 def export_xml(driver, urn, timeout, annex):
     driver.get(urn)
     export_button_selector = "#mySidebarRight > div > div:nth-child(2) > div > div > ul > li:nth-child(2) > a"
@@ -172,13 +185,13 @@ def export_xml(driver, urn, timeout, annex):
     xml_data = driver.page_source
     return xml_data
 
-@lru_cache(maxsize=100)
+@lru_cache(maxsize=MAX_CACHE_SIZE)
 def save_xml(xml_data, save_xml_path):
     with open(save_xml_path, 'w', encoding='utf-8') as file:
         file.write(xml_data)
     return f"XML salvato in: {save_xml_path}"
 
-@lru_cache(maxsize=100)
+@lru_cache(maxsize=MAX_CACHE_SIZE)
 def extract_html_article(urn, article, comma):
     response = requests.get(urn)
     if response.status_code == 200:
@@ -186,7 +199,7 @@ def extract_html_article(urn, article, comma):
         return estrai_testo_articolo(atto=html_content, num_articolo=article, comma=comma, tipo='html')
     return None
 
-@lru_cache(maxsize=100)
+@lru_cache(maxsize=MAX_CACHE_SIZE)
 def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
     
     #normalized_act_type = normalize_act_type(act_type)
@@ -200,7 +213,7 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
     print(urn)
 
     if not article:
-        driver = setup_driver()
+        #driver = setup_driver()
         try:
             xml_data = export_xml(driver, urn, timeout, annex)
             if save_xml_path:
@@ -210,8 +223,8 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
         except Exception as e:
             print(f"Errore nell'esportazione XML: {e}")
             return None
-        finally:
-            driver.quit()
+        #finally:
+            #driver.quit()
     else:
         try:
             html_out = extract_html_article(urn, article, comma)

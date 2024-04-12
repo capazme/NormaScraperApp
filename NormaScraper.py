@@ -49,6 +49,7 @@ class NormaScraperApp:
         self.define_variables()
         self.bind_root_events()
         self.setup_style()
+        sys_op.setup_driver()
         self.create_widgets()
         self.create_menu()
         self.cronologia = []
@@ -70,6 +71,8 @@ class NormaScraperApp:
     def bind_root_events(self):
         events = {
             '<Control-o>': lambda event:self.increase_text_size(),
+            '<Shift-Right>': lambda event:self.increment_entry(self.article_entry),
+            '<Shift-Left>': lambda event:self.decrement_entry(self.article_entry),
             '<Control-i>': lambda event:self.decrease_text_size(),
             '<Control-r>': lambda event:self.restart_app(),
             '<Control-0>': lambda event:self.apply_high_contrast_theme(),
@@ -504,8 +507,9 @@ class NormaScraperApp:
         self.style.configure('TButton', background='SystemButtonFace', foreground='SystemButtonText')
 
     def on_exit(self):
-        """Handle the exit command from the menu."""
-        self.root.quit()
+        sys_op.close_driver()
+        self.root.destroy()
+
 
     def increase_text_size(self):
         """Aumenta la dimensione del testo entro il limite massimo."""

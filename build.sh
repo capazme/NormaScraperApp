@@ -46,7 +46,7 @@ clean_up() {
         rm -rf "${APP_NAME}"*.app
     else
         zip -r old_version/"${APP_NAME}-${VERSION}.zip" "${APP_NAME}"*.app
-        rm -rf old_version/"${APP_NAME}"*.app "${APP_NAME}"*.app
+        rm -rf "${APP_NAME}"*.app 
     fi
 
     echo "Pulizia completata."
