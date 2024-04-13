@@ -144,17 +144,17 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
    ```
 2. Installa le librerie pytho necessarie
 
-```shell
-   pip install -r resources/requirements.txt
-```
+  ```shell
+     pip install -r resources/requirements.txt
+  ```
 
     3. Avvia NormaScraper.py con python 3.12 o superiore
 
-```sh
-python -m NormaScraper.py
-```
+  ```sh
+  python -m NormaScraper.py
+  ```
 
-5. Oppure utilizza il file build.sh per ottenere un file eseguibile
+3B. Oppure utilizza il file build.sh per ottenere un file eseguibile
    Questo script accetta vari flag che influenzano la versione e il comportamento della build:
 
    --up: Aumenta la versione minore di 0.1.
@@ -164,38 +164,38 @@ python -m NormaScraper.py
    --cleanhard: Pulisce i file generati dalle compilazioni precedenti e rimuove le versioni precedenti dell'app.
    Per eseguire una compilazione standard che incrementa automaticamente la versione patch di 0.0.1, usa il seguente comando:
 
-```bash
-./build.sh
-```
+  ```bash
+  ./build.sh
+  ```
 
 Se desideri mantenere la stessa versione e solo ricompilare l'app, puoi usare:
 
-```bash
-./build.sh --noup
-```
+  ```bash
+  ./build.sh --noup
+  ```
 
 #### Incremento della Versione
 
 Per specificare manualmente il tipo di incremento della versione:
 
-```bash
-./build.sh --up    # Incrementa la versione minore
-./build.sh --upup  # Incrementa la versione maggiore
-```
+  ```bash
+  ./build.sh --up    # Incrementa la versione minore
+  ./build.sh --upup  # Incrementa la versione maggiore
+  ```
 
 #### Pulizia
 
 Per pulire la directory di build senza rimuovere le versioni precedenti:
 
-```bash
-./build.sh --clean
-```
+  ```bash
+  ./build.sh --clean
+  ```
 
 Per una pulizia completa che include la rimozione delle versioni vecchie:
 
-```bash
-./build.sh --cleanhard
-```
+  ```bash
+  ./build.sh --cleanhard
+  ```
 
 L'app compilata verrà spostata nella directory principale del progetto, e tutti i file temporanei saranno eliminati dopo la compilazione."
 
