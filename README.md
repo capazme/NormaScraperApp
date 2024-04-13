@@ -148,7 +148,7 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
      pip install -r resources/requirements.txt
   ```
 
-    3. Avvia NormaScraper.py con python 3.12 o superiore
+3. Avvia NormaScraper.py con python 3.12 o superiore
 
   ```sh
   python -m NormaScraper.py
