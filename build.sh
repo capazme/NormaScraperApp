@@ -86,6 +86,8 @@ if [ -d "dist/$FULL_APP_NAME" ]; then
     #zip -r $FULL_APP_NAME.zip $FULL_APP_NAME.app
     rm -rf build dist "${FULL_APP_NAME}.spec" 
     echo "Cartelle build, dist e file .spec eliminati con successo"
+    chmod 777 $FULL_APP_NAME
+    echo "File reso eseguibile"
 else
     echo "Errore: la cartella di distribuzione non esiste."
 fi

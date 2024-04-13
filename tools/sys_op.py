@@ -90,6 +90,8 @@ def complete_date(act_type, date, act_number):
     except Exception as e:
         return f"Errore nel completamento della data, inserisci la data completa: {e}" 
 
+                
+
 def xml_to_html(xml_file_path):
     with open(xml_file_path, 'r', encoding='utf-8') as file:
         xml_str = file.read()
@@ -220,7 +222,7 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
             return xml_out, urn, norma
         except Exception as e:
             print(f"Errore nell'esportazione XML: {e}")
-            return None
+            return e
         #finally:
             #driver.quit()
     else:
@@ -229,4 +231,4 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
             return html_out, urn, norma
         except Exception as e:
             print(f"Errore nell'esportazione HTML: {e}")
-            return None
+            return e

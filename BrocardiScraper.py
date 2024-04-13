@@ -3,7 +3,7 @@ import os
 from bs4 import BeautifulSoup
 from tools.map import BROCARDI_CODICI, BROCARDI_MAP
 from tools.sys_op import NormaVisitata
-from tools.text_op import normalize_act_type, parse_date
+from tools.text_op import normalize_act_type
 import requests
 
 
@@ -50,17 +50,17 @@ class BrocardiScraper:
     def look_up(self, norma):
         if isinstance(norma, NormaVisitata):
             # Assumendo che do_know ritorni una tupla con il link come secondo elemento
-            print(norma)
+            #print(norma)
             norma_info = self.do_know(norma)
-            print(norma_info)
+            #print(norma_info)
             if norma_info:
                 link = norma_info[1]
                 numero_articolo = norma.to_dict()['numero_articolo']
                 if '-' in numero_articolo:
                     numero_articolo = numero_articolo.replace('-', '')
-                print(numero_articolo)
+                #print(numero_articolo)
                 components = [link, f"art{numero_articolo}.html" if numero_articolo else None]
-                print(components)
+                #print(components)
                 # Costrui  ci il pattern usando il primo e l'ultimo componente
                 start, end = components[0], components[1]
                 # La regex qui sotto assume che tra l'inizio e la fine possa esserci qualsiasi cosa

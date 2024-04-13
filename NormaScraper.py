@@ -132,18 +132,18 @@ class NormaScraperApp:
             sys_op.setup_driver()
         except Exception as e:
             messagebox.showerror("Errore di Avvio", f"Impossibile avviare il driver: {e}")
-            self.close_driver_safely()
+            return self.close_driver_safely()
 
 # ==============================================================================
 # Safe Driver Closure
 # Description: Safely closes the driver and handles any exceptions.
 # ==============================================================================
-    def close_driver_safely(self):
+    def close_driver_safely(self, close=False):
         try:
             sys_op.close_driver()
         except Exception as e:
             messagebox.showerror("Errore di Chiusura", f"Errore durante la chiusura del driver: {e}")
-        finally:
+        if close==True:
             self.root.destroy()
 
 # ==============================================================================
@@ -159,6 +159,7 @@ class NormaScraperApp:
         self.cronologia = []
         self.finestra_cronologia = None
         self.finestra_readme = None
+        self.brocardi = True
 
 # ==============================================================================
 # Event Binding
@@ -172,12 +173,13 @@ class NormaScraperApp:
             '<Control-i>': lambda event: self.decrease_text_size(),
             '<Control-r>': lambda event: self.restart_app(),
             '<Control-0>': lambda event: self.apply_high_contrast_theme(),
-            '<Control-n>': lambda event: self.apply_normal_theme(),
+            '<Control-9>': lambda event: self.apply_normal_theme(),
             '<Control-p>': lambda event: self.apri_configurazione(),
             '<Control-q>': lambda event: self.on_exit(),
             '<Return>': lambda event: self.fetch_act_data(),
             '<Control-t>': lambda event: self.apri_finestra_cronologia(),
             '<Control-h>': lambda event: self.apri_readme(),
+            '<Control-6>': lambda event: self.break_progress(),
             '<Control-d>': lambda event: self.clear_all_fields(
                 [self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry],
                 self.act_type_combobox)
@@ -204,28 +206,26 @@ class NormaScraperApp:
                     ('focus !disabled', 'green'),
                     ('hover !disabled', 'green')])
 
-
-
-
 # ==============================================================================
 # Widget Creation
 # Description: Creates and organizes all widgets in the main application window.
 # ==============================================================================
     def create_widgets(self):
         self.mainframe = ttkb.Frame(self.root, padding="3 3 12 12")
-        self.configure_mainframe()
         self.create_input_widgets()
         self.create_version_radiobuttons()
         self.create_operation_buttons()
         self.create_output_area()
         self.create_history_buttons()
         self.create_progress_bar()
+        #self.create_brocardi_toggle_button()
         self.brocardi_buttons_frame = ttkb.Frame(self.mainframe)
         self.brocardi_buttons_frame.grid(row=13, column=0, columnspan=4, sticky="nsew", padx=5, pady=5)
 
         self.brocardi_link_button = ttkb.Button(self.mainframe, text="Apri in Brocardi")
         self.brocardi_link_button.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
         self.brocardi_link_button.grid_remove()
+        self.configure_mainframe()
     
 # ==============================================================================
 # Main Frame Configuration
@@ -233,13 +233,19 @@ class NormaScraperApp:
 # ==============================================================================
     def configure_mainframe(self):
         self.mainframe.grid(column=0, row=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        self.root.geometry('800x800')  
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
-        for i in range(4):
-            self.mainframe.columnconfigure(i, weight=1)
-        for i in range(12):
-            self.mainframe.rowconfigure(i, weight=1)
+        
+        # Get the number of columns and rows currently in use
+        cols, rows = self.mainframe.grid_size()
+
+        # Configure weight for each column in use
+        for col in range(cols):
+            self.mainframe.columnconfigure(col, weight=1)
+
+        # Configure weight for each row in use
+        for row in range(rows):
+            self.mainframe.rowconfigure(row, weight=1)
 
 # ==============================================================================
 # Input Widgets
@@ -291,14 +297,17 @@ class NormaScraperApp:
 
     def create_operation_buttons(self):
         # Create operation buttons like "Estrai dati", "Salva come XML", etc.
-        operations = [
-            ("Estrai dati", self.fetch_act_data, 0),
-            ("Salva come XML", self.save_as_xml, 1),
-            ("Cancella", lambda: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.act_type_combobox], self.act_type_combobox), 2),
-            ("Copia Testo", self.copia_output, 3)
+        pos_operations = [
+            ("Estrai dati", self.fetch_act_data, 8, 0),
         ]
-        for text, command, column in operations:
-            ttkb.Button(self.mainframe, text=text, command=command, bootstyle="success-outline").grid(row=8, column=column, sticky=(W, E), padx=4, pady=4)
+        for text, command, row, column in pos_operations:
+            ttkb.Button(self.mainframe, text=text, command=command, bootstyle="success-outline").grid(row=row, column=column, sticky=(W, E), padx=4, pady=4)
+
+        neg_operations = [
+            ('Interrompi estrazione', self.break_progress, 8, 1),
+        ]
+        for text, command, row, column in neg_operations:
+            ttkb.Button(self.mainframe, text=text, command=command, bootstyle="danger").grid(row=row, column=column, sticky=(W, E), padx=4, pady=4)
     
     def create_tooltip(elf, widget, text):
         tool_tip = Tooltip(widget, text)
@@ -325,44 +334,91 @@ class NormaScraperApp:
     def create_output_area(self):
         # Create scrolled text area for output
         self.output_text = ttkb.ScrolledText(self.mainframe, wrap=tk.WORD)
-        self.output_text.grid(row=10, column=0, columnspan=4, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
+        self.output_text.grid(row=10, column=0, columnspan=6, rowspan=4, sticky=(tk.N, tk.S, tk.W, tk.E), pady=(10,0))
+
+        operations = [
+            ("Salva come XML", self.save_as_xml, 14, 0),
+            ("Cancella", lambda: self.clear_all_fields([self.date_entry, self.act_number_entry, self.article_entry, self.act_type_combobox], self.act_type_combobox), 14, 2),
+            ("Copia Testo", self.copia_output, 14, 4)
+        ]
+        
+        # Use a consistent padx to space out the buttons horizontally
+        button_padx = (20, 20)  # Increase the spacing between buttons by adjusting these values
+        # Align the buttons to the west and east within their grid cells to distribute them evenly
+        for text, command, row, column in operations:
+            button = ttkb.Button(self.mainframe, text=text, command=command, bootstyle="success-outline")
+            button.grid(row=row, column=column, columnspan=2, sticky=(tk.W, tk.E), padx=button_padx)
 
     def create_history_buttons(self):
         # Create buttons related to history operations
         history_ops = [
             ("Cronologia", self.apri_finestra_cronologia, 0),
             ("Salva cronologia", self.salva_cronologia, 2),
-            ("Carica cronologia", self.carica_cronologia, 3)
+            ("Carica cronologia", self.carica_cronologia, 4)  # Changed from 3 to 4 to add more space
         ]
+        button_padx = (20, 20)  # Horizontal padding to add space between buttons
+        pady_between_rows = 20  # Vertical padding to add space between the rows of buttons
+        
         for text, command, column in history_ops:
             button = ttkb.Button(self.mainframe, text=text, command=command)
-            button.grid(row=11, column=column, sticky="ew")
-            
+            button.grid(row=15, column=column, sticky="ew", padx=button_padx)
+        
+        # Add padding below the 'Cronologia' button to add vertical spacing
+        self.mainframe.grid_rowconfigure(14, pad=pady_between_rows)
+      
     def create_labeled_entry(self, label_text, placeholder, row, width=None, increment=False):
         # Create and place the label for the entry
         label = ttkb.Label(self.mainframe, text=label_text, bootstyle='info')
         label.grid(row=row, column=0, sticky=tk.W, padx=5, pady=5)
 
         # Create the entry widget
-        entry = ttkb.Entry(self.mainframe)
-        entry.grid(row=row, column=1, columnspan=2, sticky=(tk.W, tk.E), padx=5, pady=5)
+        entry = ttkb.Entry(self.mainframe, width=width)
+        # Adjust columnspan if increment is True, place the Entry right next to the increment buttons
+        entry.grid(row=row, column=1, columnspan=2 if increment else 3, sticky=(tk.W, tk.E), padx=5, pady=5)
 
         # Attach a tooltip to the entry widget
         self.create_tooltip(entry, placeholder)  # Assuming create_tooltip is correctly implemented
 
         if increment:
+            # Frame to hold both increment buttons, this keeps them together
+            inc_dec_frame = ttkb.Frame(self.mainframe)
+            # Reduce the padx to bring the frame closer to the Entry
+            inc_dec_frame.grid(row=row, column=3, sticky=tk.W, padx=(0, 5))
+
             # Buttons for incrementing and decrementing the value
-            inc_button = ttkb.Button(self.mainframe, text="▲", bootstyle="outline", command=lambda: self.increment_entry(entry))
-            dec_button = ttkb.Button(self.mainframe, text="▼", bootstyle="outline", command=lambda: self.decrement_entry(entry))
-            inc_button.grid(row=row, column=3, padx=2, pady=2, sticky=tk.E)
-            dec_button.grid(row=row, column=4, padx=2, pady=2, sticky=tk.E)
+            inc_button = ttkb.Button(inc_dec_frame, text="▲", bootstyle="outline", command=lambda: self.increment_entry(entry))
+            dec_button = ttkb.Button(inc_dec_frame, text="▼", bootstyle="outline", command=lambda: self.decrement_entry(entry))
+            # No padding needed as they are inside the frame which is already positioned
+            inc_button.pack(side=tk.LEFT)
+            dec_button.pack(side=tk.LEFT)
 
         return entry
-    
+ 
     def create_progress_bar(self):
         self.progress_bar = ttkb.Progressbar(self.mainframe, orient="horizontal", length=300, mode='determinate', style='success.Striped.Horizontal.TProgressbar')
-        self.progress_bar.grid(row=12, column=0, columnspan=4, pady=10, padx=5, sticky="ew")
+        self.progress_bar.grid(row=16, column=0, columnspan=4, pady=10, padx=5, sticky="ew")
 
+    def break_progress(self, e=None):
+        # Stop the progress bar first
+        self.progress_bar.stop()
+        # Try to close the driver safely; handle any exceptions that might occur
+        try:
+            self.close_driver_safely()
+        except Exception as exc:
+            messagebox.showerror("Errore di Chiusura", f"Non è stato possibile chiudere il driver correttamente: {exc}")
+        
+        # Set up the driver again, handling potential errors
+        try:
+            self.setup_driver()
+        except Exception as exc:
+            messagebox.showerror("Errore di Avvio", f"Impossibile riavviare il driver: {exc}")
+            return  # Exit the function if the driver cannot be restarted
+        
+        # Display a warning message about the interruption
+        if e:
+            messagebox.showwarning("Progresso", f"Ricerca interrotta: {e}")
+        else:
+            messagebox.showwarning("Progresso", "La ricerca è stata interrotta.")
 
 # ==============================================================================
 # Function Definitions
@@ -395,7 +451,10 @@ class NormaScraperApp:
 
         # Chiamare fetch_act_data solo se il Combobox ha un valore valido e non è il default
         if self.act_type_combobox.get() != "Select":
-            self.fetch_act_data()
+            try:
+                self.fetch_act_data()
+            except Exception as e:
+                self.break_progress(e)
 
 # ==============================================================================
 # Decrement Entry
@@ -414,7 +473,10 @@ class NormaScraperApp:
 
         # Chiamare fetch_act_data solo se il Combobox ha un valore valido e non è il default
         if self.act_type_combobox.get() != "Select":
-            self.fetch_act_data()
+            try:
+                self.fetch_act_data()
+            except Exception as e:
+                self.break_progress(e)
 
 # ==============================================================================
 # Toggle Extension Frame
@@ -475,9 +537,11 @@ class NormaScraperApp:
             defaultextension=".xml"
         )
         if file_path:
-            self.fetch_act_data(save_xml_path=file_path)
-            
-        
+            try:
+                self.fetch_act_data(save_xml_path=file_path)
+            except Exception as e:
+                self.break_progress(str(e))
+
 # ==============================================================================
 # History Management
 # Description: Methods related to managing and manipulating the history of searches
@@ -609,13 +673,12 @@ class NormaScraperApp:
             self.cronologia.clear()
             messagebox.showinfo("Cronologia", "Cronologia pulita con successo.")
 
-
 # ==============================================================================
 # Data Fetching
 # Description: Manages the fetching of legal document data from external sources.
 # ==============================================================================
     def fetch_act_data(self, save_xml_path=None):
-        threading.Thread(target=self._fetch_act_data, args=(save_xml_path,), daemon=True).start()
+            threading.Thread(target=self._fetch_act_data, args=(save_xml_path,), daemon=True).start()
 
 # ==============================================================================
 # Private Data Fetching
@@ -639,17 +702,17 @@ class NormaScraperApp:
             self.root.after(50, self.progress_bar.start)
             data, url, norma = sys_op.get_urn_and_extract_data(act_type=act_type, date=date, act_number=act_number, article=article, comma=comma, version=version, version_date=version_date, save_xml_path=save_xml_path)
             self.root.after(5, self.progress_bar.stop)
-            self.root.after(5, lambda: self.display_results(data, url, norma))
+            self.root.after(5, lambda: self.display_results(data, url, norma, brocardi=self.brocardi))
         except Exception as e:
-            self.root.after(5, lambda: messagebox.showerror("Errore", str(e)))
-            self.root.after(5, self.progress_bar.stop)
-         # Ferma la barra di progresso nel thread principale
+            self.root.after(5, lambda: self.break_progress)
+            self.root.after(5, lambda error=e :messagebox.showerror("Errore", error))
+            return e
 
 # ==============================================================================
 # Display Results
 # Description: Displays the fetched data and related actions in the GUI.
 # ==============================================================================
-    def display_results(self, data, url, norma):
+    def display_results(self, data, url, norma, brocardi=True):
         self.output_text.delete('1.0', tk.END)
         self.output_text.insert(tk.END, data)
         self.crea_link("Apri URN Normattiva", url, 9, 1)
@@ -664,7 +727,7 @@ class NormaScraperApp:
         link = tk.Label(self.mainframe, text=text, fg="blue", cursor="hand2")
         link.bind("<Button-1>", lambda e: self.apri_url(url))
         link.grid(row=row, column=column)
-    
+
 # ==============================================================================
 # Brocardi Information Handling
 # Description: Manages the retrieval and display of brocardi information based on the legal norm.
@@ -672,16 +735,18 @@ class NormaScraperApp:
     def check_brocardi(self, norma):
         result = self.brocardi.get_info(norma)
         # Assicurarsi che result sia una tupla con due elementi prima di accedere
-        if len(result) >= 2:
+        if len(result) >= 2 and isinstance(result, tuple):
             self.output_text.insert(tk.END, result[0])
             if result[2]:  # Se c'è un URL, mostra il bottone per il link
                 self.brocardi_link_button.grid()  # Mostra il pulsante
                 self.brocardi_link_button.configure(command=lambda: self.apri_url(result[2]))
 
-            print(result[1])
+            #print(result[1])
             if result[1]:  # Se ci sono dati per i bottoni brocardi
                 # Ritarda la creazione dei bottoni per assicurarsi che tutto il resto sia aggiornato
                 self.root.after(100, lambda: self.create_brocardi_buttons(result[1]))
+        else:
+            return False
 
 # ==============================================================================
 # Dynamic Button Creation for Brocardi Details
@@ -729,7 +794,7 @@ class NormaScraperApp:
     def create_value_window(self, value, key):
         # Questa funzione crea una nuova finestra per mostrare il valore
         top = Toplevel(self.root)
-        top.title("f{key}")
+        top.title(f"{key}")
         
         # Assicurati che la finestra appaia al primo livello
         top.attributes('-topmost', True)
@@ -754,7 +819,28 @@ class NormaScraperApp:
         # Dopo un certo intervallo, rimuovi il flag 'topmost' per permettere alla finestra di andare in background se necessario
         top.after(5000, lambda: top.attributes('-topmost', False))
 
+    def create_brocardi_toggle_button(self):
+        # Testo e icona del bottone basato sullo stato corrente di self.brocardi
+        button_text = "Brocardi attivo" if self.brocardi else "Brocardi inattivo"
+        #button_icon = self.brocardi_active_icon if self.brocardi else self.brocardi_inactive_icon
+        button_color = 'success' if self.brocardi else 'danger'  # Usa stili predefiniti di successo e pericolo
+        
+        # Crea il bottone e assegna il comando toggle_brocardi per cambiare lo stato
+        self.brocardi_toggle_button = ttkb.Checkbutton(bootstyle=f"{button_color}-square-toggle", master=self.mainframe, compound="left", command=self.toggle_brocardi)
+        self.brocardi_toggle_button.grid(row=17, column=0, sticky='ew', padx=10, pady=10)  # Modifica row e column come necessario
 
+    def toggle_brocardi(self):
+        # Cambia il valore di self.brocardi
+        self.brocardi = not self.brocardi
+        
+        # Aggiorna il testo, l'icona e il colore del bottone per riflettere il nuovo stato
+        #new_text = "Brocardi Attivi" if self.brocardi else "Brocardi Inattivi"
+        new_icon = self.brocardi_active_icon if self.brocardi else self.brocardi_inactive_icon
+        #new_color = 'success' if self.brocardi else 'danger'
+        self.brocardi_toggle_button.config(image=new_icon)
+        
+        # Aggiunta opzionale: Visualizza un messaggio di conferma del cambio di stato
+        messagebox.showinfo("Brocardi Toggle", f"Stato dei Brocardi: {'attivato' if self.brocardi else 'disattivato'}")
 
 
 # ==============================================================================
@@ -806,7 +892,7 @@ class NormaScraperApp:
 # ==============================================================================
     def restart_app(self):
         """Restart the app."""
-        self.close_driver_safely()
+        self.close_driver_safely(close=True)
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
@@ -816,8 +902,7 @@ class NormaScraperApp:
 
     def on_exit(self):
         if messagebox.askokcancel("Uscire", "Sei sicuro di voler uscire?"):
-            self.close_driver_safely()
-
+            self.close_driver_safely(close=True)
 
     def increase_text_size(self):
         """Aumenta la dimensione del testo entro il limite massimo."""
@@ -830,7 +915,6 @@ class NormaScraperApp:
         if self.font_size > self.font_size_min:
             self.font_size -= 2  # Decrementa di 2 punti
             self.setup_style()  # Riapplica gli stili con la nuova dimensione del font
-
 
     def apply_high_contrast_theme(self):
         """Apply high contrast theme for better visibility."""
@@ -846,5 +930,3 @@ if __name__ == "__main__":
     #codes_to_preload = ["costituzione", "codice civile", "codice penale"]
     #app.start_async_preloading(codes_to_preload)
     root.mainloop()
-   
-
