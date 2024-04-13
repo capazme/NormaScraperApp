@@ -796,6 +796,7 @@ class NormaScraperApp:
 # ==============================================================================
     def restart_app(self):
         """Restart the app."""
+        self.close_driver_safely()
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
