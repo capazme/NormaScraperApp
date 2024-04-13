@@ -83,7 +83,7 @@ mv *.app old_version
 if [ -d "dist/$FULL_APP_NAME" ]; then
     mv "dist/$FULL_APP_NAME.app" .
     echo "Applicazione spostata con successo nella directory principale"
-    zip -r $FULL_APP_NAME.zip $FULL_APP_NAME.app
+    #zip -r $FULL_APP_NAME.zip $FULL_APP_NAME.app
     rm -rf build dist "${FULL_APP_NAME}.spec" 
     echo "Cartelle build, dist e file .spec eliminati con successo"
 else

@@ -197,6 +197,15 @@ class NormaScraperApp:
         style.configure('TEntry', padding=5, font= self.font_configs)
         style.configure('TLabel', font= self.font_configs)
         style.configure('TRadiobutton', font= self.font_configs)
+        style.configure('act.TCombobox', font=self.font_configs, arrowsize=self.font_size)
+        style.map('act.TCombobox', arrowcolor=[
+                    ('disabled', 'gray'),
+                    ('pressed !disabled', 'blue'),
+                    ('focus !disabled', 'green'),
+                    ('hover !disabled', 'green')])
+
+
+
 
 # ==============================================================================
 # Widget Creation
@@ -257,7 +266,7 @@ class NormaScraperApp:
             'codice della protezione civile', "codice della crisi d'impresa e dell'insolvenza"
         ]
         self.act_type_var = tk.StringVar()
-        self.act_type_combobox = self.create_combobox(self.mainframe, act_types, "Select", 0, 1)
+        self.act_type_combobox = self.create_combobox(container=self.mainframe, values=act_types, default_text="Select", row=0, column=1, style='act.TCombobox')
         self.act_type_combobox['state'] = 'normal'
 
         #self.act_type_entry = self.create_labeled_entry("Tipo atto:", "Seleziona o digita il tipo di atto (es. legge, decreto)", 0)
@@ -633,6 +642,7 @@ class NormaScraperApp:
             self.root.after(5, lambda: self.display_results(data, url, norma))
         except Exception as e:
             self.root.after(5, lambda: messagebox.showerror("Errore", str(e)))
+            self.root.after(5, self.progress_bar.stop)
          # Ferma la barra di progresso nel thread principale
 
 # ==============================================================================
