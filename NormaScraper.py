@@ -1,3 +1,48 @@
+# ==============================================================================
+
+
+#   /$$   /$$                                              /$$$$$$                                                            
+#  | $$$ | $$                                             /$$__  $$                                                           
+#  | $$$$| $$  /$$$$$$   /$$$$$$  /$$$$$$/$$$$   /$$$$$$ | $$  \__/  /$$$$$$$  /$$$$$$  /$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$ 
+#  | $$ $$ $$ /$$__  $$ /$$__  $$| $$_  $$_  $$ |____  $$|  $$$$$$  /$$_____/ /$$__  $$|____  $$ /$$__  $$ /$$__  $$ /$$__  $$
+#  | $$  $$$$| $$  \ $$| $$  \__/| $$ \ $$ \ $$  /$$$$$$$ \____  $$| $$      | $$  \__/ /$$$$$$$| $$  \ $$| $$$$$$$$| $$  \__/
+#  | $$\  $$$| $$  | $$| $$      | $$ | $$ | $$ /$$__  $$ /$$  \ $$| $$      | $$      /$$__  $$| $$  | $$| $$_____/| $$      
+#  | $$ \  $$|  $$$$$$/| $$      | $$ | $$ | $$|  $$$$$$$|  $$$$$$/|  $$$$$$$| $$     |  $$$$$$$| $$$$$$$/|  $$$$$$$| $$      
+#  |__/  \__/ \______/ |__/      |__/ |__/ |__/ \_______/ \______/  \_______/|__/      \_______/| $$____/  \_______/|__/      
+#                                                                                               | $$                          
+#                                                                                               | $$                          
+#                                                                                               |__/                          
+                                                                                             
+                                             
+# ==============================================================================
+# Application Name: NormaScraper App
+# Description: This application is designed to fetch, display, and manage legal
+# norms and articles from various legal databases. It supports configuration
+# through a GUI, making it accessible for non-technical users to perform complex
+# queries and retrieve legal documents effectively.
+#
+# Main Features:
+# - Fetch and display legal norms based on user inputs.
+# - Save queries to XML.
+# - Manage query history and configurations.
+# - Dynamic tooltips and UI elements for better user experience.
+#
+# Author: gpuzio - capazme
+# License: CC0-1.0 License
+# ==============================================================================
+
+
+# ==============================================================================
+# Environment and Path Setup
+# ==============================================================================
+import os
+import sys
+
+CURRENT_APP_PATH = os.path.dirname(os.path.abspath(__file__))
+
+# ==============================================================================
+# Import Section
+# ==============================================================================
 import ttkbootstrap as ttkb
 from ttkbootstrap.constants import *
 import json
@@ -8,13 +53,21 @@ import webbrowser
 import pyperclip
 from tools import sys_op
 from tools.config import ConfigurazioneDialog
-import os
 import threading
-import sys
 from BrocardiScraper import BrocardiScraper
 
-CURRENT_APP_PATH = os.path.dirname(os.path.abspath(__file__))
-
+# ==============================================================================
+# Class Definitions
+# Description: Contains all class definitions including Tooltip for widget 
+# tooltips and NormaScraperApp for main application logic.
+#
+# Classes:
+# - Tooltip: Manages tooltips for widgets.
+# - NormaScraperApp: Main class for the application UI and functionality.
+# ==============================================================================
+# --------------------------------
+# UTILITY CLASSES
+# --------------------------------
 class Tooltip:
     """
     Create a tooltip for a given widget.
@@ -40,48 +93,90 @@ class Tooltip:
             self.tip_window.destroy()
             self.tip_window = None
 
+# --------------------------------
+# MAIN APPLICATION CLASS
+# --------------------------------
 class NormaScraperApp:
-#
-# SETUP
-#
+    
+# ==============================================================================
+# Class Initialization
+# Description: Initializes the application, sets up the main window, binds events,
+# and configures the application's initial state and behavior.
+# ==============================================================================
     def __init__(self, root):
         self.root = root
         self.configure_root()
         self.define_variables()
         self.bind_root_events()
         self.setup_style()
-        sys_op.setup_driver()
+        self.setup_driver()
         self.create_widgets()
         self.create_menu()
-        self.cronologia = []
-        self.finestra_cronologia = None
-        self.finestra_readme = None
         self.brocardi = BrocardiScraper()
         # self.updater = self.configure_updater()  # Uncomment and configure if updater is used
 
+# ==============================================================================
+# Root Configuration
+# Description: Configures the main window's properties.
+# ==============================================================================
     def configure_root(self):
         self.root.title("NormaScraper - Beta")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
 
+# ==============================================================================
+# Driver Setup
+# Description: Sets up and initializes the driver required for operations.
+# ==============================================================================
+    def setup_driver(self):
+        try:
+            sys_op.setup_driver()
+        except Exception as e:
+            messagebox.showerror("Errore di Avvio", f"Impossibile avviare il driver: {e}")
+            self.close_driver_safely()
+
+# ==============================================================================
+# Safe Driver Closure
+# Description: Safely closes the driver and handles any exceptions.
+# ==============================================================================
+    def close_driver_safely(self):
+        try:
+            sys_op.close_driver()
+        except Exception as e:
+            messagebox.showerror("Errore di Chiusura", f"Errore durante la chiusura del driver: {e}")
+        finally:
+            self.root.destroy()
+
+# ==============================================================================
+# Variable Definitions
+# Description: Defines and initializes variables used throughout the application.
+# ==============================================================================
     def define_variables(self):
         self.font_size = 15
         self.font_size_min = 10
         self.font_size_max = 30
         self.finestra_cronologia = None
         self.finestra_readme = None
+        self.cronologia = []
+        self.finestra_cronologia = None
+        self.finestra_readme = None
 
+# ==============================================================================
+# Event Binding
+# Description: Binds keyboard and mouse events to their respective handler functions.
+# ==============================================================================
     def bind_root_events(self):
         events = {
-            '<Control-o>': lambda event:self.increase_text_size(),
-            '<Shift-Right>': lambda event:self.increment_entry(self.article_entry),
-            '<Shift-Left>': lambda event:self.decrement_entry(self.article_entry),
-            '<Control-i>': lambda event:self.decrease_text_size(),
-            '<Control-r>': lambda event:self.restart_app(),
-            '<Control-0>': lambda event:self.apply_high_contrast_theme(),
-            '<Control-n>': lambda event:self.apply_normal_theme(),
-            '<Control-p>': lambda event:self.apri_configurazione(),
-            '<Control-q>': lambda event:self.on_exit(),
-            '<Return>': lambda event:self.fetch_act_data(),
-            '<Control-t>': lambda event:self.apri_finestra_cronologia(),
+            '<Control-o>': lambda event: self.increase_text_size(),
+            '<Shift-Right>': lambda event: self.increment_entry(self.article_entry),
+            '<Shift-Left>': lambda event: self.decrement_entry(self.article_entry),
+            '<Control-i>': lambda event: self.decrease_text_size(),
+            '<Control-r>': lambda event: self.restart_app(),
+            '<Control-0>': lambda event: self.apply_high_contrast_theme(),
+            '<Control-n>': lambda event: self.apply_normal_theme(),
+            '<Control-p>': lambda event: self.apri_configurazione(),
+            '<Control-q>': lambda event: self.on_exit(),
+            '<Return>': lambda event: self.fetch_act_data(),
+            '<Control-t>': lambda event: self.apri_finestra_cronologia(),
             '<Control-h>': lambda event: self.apri_readme(),
             '<Control-d>': lambda event: self.clear_all_fields(
                 [self.date_entry, self.act_number_entry, self.article_entry, self.comma_entry, self.version_date_entry],
@@ -90,9 +185,10 @@ class NormaScraperApp:
         for event, action in events.items():
             self.root.bind(event, action)
 
-#
-# UI
-#
+# ==============================================================================
+# UI Style Configuration
+# Description: Configures the visual style of the application using the ttkbootstrap library.
+# ==============================================================================
     def setup_style(self):
         style = ttkb.Style()
         style.theme_use('flatly')  # Change theme here if needed
@@ -102,6 +198,10 @@ class NormaScraperApp:
         style.configure('TLabel', font= self.font_configs)
         style.configure('TRadiobutton', font= self.font_configs)
 
+# ==============================================================================
+# Widget Creation
+# Description: Creates and organizes all widgets in the main application window.
+# ==============================================================================
     def create_widgets(self):
         self.mainframe = ttkb.Frame(self.root, padding="3 3 12 12")
         self.configure_mainframe()
@@ -118,7 +218,10 @@ class NormaScraperApp:
         self.brocardi_link_button.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
         self.brocardi_link_button.grid_remove()
     
-
+# ==============================================================================
+# Main Frame Configuration
+# Description: Configures the layout and geometry of the main application frame.
+# ==============================================================================
     def configure_mainframe(self):
         self.mainframe.grid(column=0, row=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.root.geometry('800x800')  
@@ -128,7 +231,11 @@ class NormaScraperApp:
             self.mainframe.columnconfigure(i, weight=1)
         for i in range(12):
             self.mainframe.rowconfigure(i, weight=1)
-            
+
+# ==============================================================================
+# Input Widgets
+# Description: Creates and configures input widgets for user data entry.
+# ==============================================================================          
     def create_input_widgets(self):
         # Create input fields with labels and tooltips if necessary
         
@@ -248,13 +355,24 @@ class NormaScraperApp:
         self.progress_bar.grid(row=12, column=0, columnspan=4, pady=10, padx=5, sticky="ew")
 
 
-#
-# FUNZIONI
-#
+# ==============================================================================
+# Function Definitions
+# Description: Contains all key functional operations that handle data manipulation, 
+# user interaction, and application behavior.
+# ==============================================================================
+
+# ==============================================================================
+# Open README
+# Description: Opens the GitHub README page in a default web browser.
+# ==============================================================================
     def apri_readme(self):
         github_url = "https://github.com/capazme/NormaScraperApp"
         webbrowser.open(github_url)
 
+# ==============================================================================
+# Increment Entry
+# Description: Increases the numeric value in an entry field.
+# ==============================================================================
     def increment_entry(self, entry):
         current_value = entry.get()
         try:
@@ -270,6 +388,10 @@ class NormaScraperApp:
         if self.act_type_combobox.get() != "Select":
             self.fetch_act_data()
 
+# ==============================================================================
+# Decrement Entry
+# Description: Decreases the numeric value in an entry field.
+# ==============================================================================
     def decrement_entry(self, entry):
         current_value = entry.get()
         try:
@@ -285,6 +407,10 @@ class NormaScraperApp:
         if self.act_type_combobox.get() != "Select":
             self.fetch_act_data()
 
+# ==============================================================================
+# Toggle Extension Frame
+# Description: Shows or hides additional UI components dynamically.
+# ==============================================================================
     def toggle_extension(self):
         """Mostra o nasconde il frame dell'estensione."""
         if self.extension_frame.winfo_viewable():
@@ -294,14 +420,26 @@ class NormaScraperApp:
             self.extension_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E))
             self.toggle_extension_btn.config(text="▲") 
 
+# ==============================================================================
+# Copy Output to Clipboard
+# Description: Copies the content of the output text area to the clipboard.
+# ==============================================================================
     def copia_output(self):
         content = self.output_text.get("1.0", tk.END)
         pyperclip.copy(content)
         messagebox.showinfo("Copia", "Testo copiato negli appunti!")
 
+# ==============================================================================
+# Open URL
+# Description: Opens a specified URL in a new browser tab.
+# ==============================================================================
     def apri_url(self, url):
         webbrowser.open_new_tab(url)
 
+# ==============================================================================
+# Clear All Fields
+# Description: Resets all input fields and dropdowns to their default states.
+# ==============================================================================
     def clear_all_fields(self, entries, comboboxes=None, combobox_default_value="Seleziona il tipo di atto"):
         # Resetta tutti i campi Entry
         for entry in entries:
@@ -316,9 +454,10 @@ class NormaScraperApp:
             for combobox in comboboxes:
                 combobox.set(combobox_default_value)
 
-#
-# XLM 
-#
+# ==============================================================================
+# XML Saving Functionality
+# Description: Handles saving of data in XML format based on user input.
+# ==============================================================================
     def save_as_xml(self):
         file_path = filedialog.asksaveasfilename(
             title="Salva come XML",
@@ -330,9 +469,17 @@ class NormaScraperApp:
             self.fetch_act_data(save_xml_path=file_path)
             
         
-#
-# CRONOLOGIA
-#        
+# ==============================================================================
+# History Management
+# Description: Methods related to managing and manipulating the history of searches
+# and norm data within the application.
+# ==============================================================================
+
+# ==============================================================================
+# Add to History
+# Description: Adds a new norm to the history, ensuring the history does not exceed
+# a maximum size limit.
+# ==============================================================================
     def aggiungi_a_cronologia(self, norma):
         # Controlla la dimensione massima della cronologia e aggiunge una nuova norma
         if len(self.cronologia) >= 50:
@@ -340,6 +487,11 @@ class NormaScraperApp:
         if norma not in self.cronologia:
             self.cronologia.append(norma)
 
+# ==============================================================================
+# Open History Window
+# Description: Opens a new window displaying the history of searched norms, allowing
+# for interaction and re-querying of historical data.
+# ==============================================================================
     def apri_finestra_cronologia(self):
         if hasattr(self, 'finestra_cronologia') and self.finestra_cronologia:
             self.finestra_cronologia.destroy()
@@ -367,6 +519,11 @@ class NormaScraperApp:
         btn_pulisci = ttkb.Button(self.finestra_cronologia, text="Pulisci", command=self.cancella_cronologia)
         btn_pulisci.pack(side=tk.BOTTOM, anchor=tk.E, padx=10, pady=10)
 
+# ==============================================================================
+# Item Click Event Handler
+# Description: Handles the click event on history items, allowing actions such as
+# re-querying or opening related URLs.
+# ==============================================================================
     def on_item_clicked(self, event):
         col = self.tree.identify_column(event.x)
         item_id = self.tree.selection()[0]
@@ -376,7 +533,11 @@ class NormaScraperApp:
             self.ripeti_ricerca_selezionata(norma)
         elif col == '#2' and norma.url:  # Clic su "URL"
             webbrowser.open_new_tab(norma.url)
-                
+
+# ==============================================================================
+# Repeat Selected Search
+# Description: Repeats a previously selected search from history.
+# ==============================================================================
     def ripeti_ricerca_selezionata(self, norma):
         if norma:
             self.act_type_combobox.delete(0, tk.END)
@@ -391,6 +552,10 @@ class NormaScraperApp:
             self.article_entry.delete(0, tk.END)
             self.article_entry.insert(0, norma.numero_articolo)
 
+# ==============================================================================
+# Save History
+# Description: Saves the current history to a file selected by the user.
+# ==============================================================================
     def salva_cronologia(self):
         nome_file = simpledialog.askstring("Salva Cronologia", "Inserisci il nome del file:")
         if nome_file:
@@ -410,6 +575,10 @@ class NormaScraperApp:
             else:
                 messagebox.showwarning("Annullato", "Salvataggio cronologia annullato.")
 
+# ==============================================================================
+# Load History
+# Description: Loads history from a file selected by the user.
+# ==============================================================================
     def carica_cronologia(self):
         dir_cronologia = os.path.join(CURRENT_APP_PATH, "Resources", "Frameworks", "usr", "cron")
         
@@ -419,7 +588,11 @@ class NormaScraperApp:
                 self.cronologia = [sys_op.NormaVisitata.from_dict(n) for n in json.load(f)]
             messagebox.showinfo("Caricato", "Cronologia caricata con successo")
             self.apri_finestra_cronologia()
- 
+
+# ==============================================================================
+# Clear History
+# Description: Clears all entries from the current history.
+# ==============================================================================
     def cancella_cronologia(self):
         # Pulisce la cronologia
         if len(self.cronologia)>0:
@@ -428,12 +601,17 @@ class NormaScraperApp:
             messagebox.showinfo("Cronologia", "Cronologia pulita con successo.")
 
 
-#       
-# OUTPUT
-#
+# ==============================================================================
+# Data Fetching
+# Description: Manages the fetching of legal document data from external sources.
+# ==============================================================================
     def fetch_act_data(self, save_xml_path=None):
         threading.Thread(target=self._fetch_act_data, args=(save_xml_path,), daemon=True).start()
 
+# ==============================================================================
+# Private Data Fetching
+# Description: Performs the actual data fetching operations in a separate thread.
+# ==============================================================================
     def _fetch_act_data(self, save_xml_path=None):
         # Avvia la barra di progresso nel thread principale
 
@@ -457,23 +635,30 @@ class NormaScraperApp:
             self.root.after(5, lambda: messagebox.showerror("Errore", str(e)))
          # Ferma la barra di progresso nel thread principale
 
+# ==============================================================================
+# Display Results
+# Description: Displays the fetched data and related actions in the GUI.
+# ==============================================================================
     def display_results(self, data, url, norma):
         self.output_text.delete('1.0', tk.END)
         self.output_text.insert(tk.END, data)
         self.crea_link("Apri URN Normattiva", url, 9, 1)
         self.aggiungi_a_cronologia(norma)
         self.check_brocardi(norma)
-     
-                  
+
+# ==============================================================================
+# Create Hyperlink
+# Description: Creates a clickable hyperlink in the output area.
+# ==============================================================================                  
     def crea_link(self, text, url, row, column):
         link = tk.Label(self.mainframe, text=text, fg="blue", cursor="hand2")
         link.bind("<Button-1>", lambda e: self.apri_url(url))
         link.grid(row=row, column=column)
     
-#
-# BROCARDI
-#  
-    
+# ==============================================================================
+# Brocardi Information Handling
+# Description: Manages the retrieval and display of brocardi information based on the legal norm.
+# ==============================================================================  
     def check_brocardi(self, norma):
         result = self.brocardi.get_info(norma)
         # Assicurarsi che result sia una tupla con due elementi prima di accedere
@@ -487,7 +672,11 @@ class NormaScraperApp:
             if result[1]:  # Se ci sono dati per i bottoni brocardi
                 # Ritarda la creazione dei bottoni per assicurarsi che tutto il resto sia aggiornato
                 self.root.after(100, lambda: self.create_brocardi_buttons(result[1]))
-    
+
+# ==============================================================================
+# Dynamic Button Creation for Brocardi Details
+# Description: Dynamically creates buttons for each brocardi detail in a Toplevel window.
+# ==============================================================================
     def create_brocardi_buttons(self, data):
         """Create dynamic buttons based on the data dictionary in a Toplevel window."""
         # Check if a Toplevel already exists, if yes, clear it, otherwise create a new one
@@ -504,11 +693,15 @@ class NormaScraperApp:
         row = 0
         for key, value in data.items():
             if value:
-                button = ttkb.Button(self.brocardi_toplevel, text=f"{key}",
-                                    command=lambda v=value: self.create_value_window(v))
+                # Utilizzare una funzione interna per creare una chiusura e catturare correttamente i valori
+                def make_command(v, k):
+                    return lambda: self.create_value_window(v, k)
+                
+                button = ttkb.Button(self.brocardi_toplevel, text=f"{key}", command=make_command(value, key))
                 button.grid(row=row, column=0, sticky="ew", padx=5, pady=5)
-                self.brocardi_toplevel.grid_columnconfigure(0, weight=1)  # Make the button expand
+                self.brocardi_toplevel.grid_columnconfigure(0, weight=1)
                 row += 1
+
 
         # Adjust window size automatically to fit contents
         self.brocardi_toplevel.resizable(width=True, height=True)  # Allow resizing if necessary
@@ -519,11 +712,14 @@ class NormaScraperApp:
         self.brocardi_toplevel.attributes('-topmost', True)  # Ensure it stays on top until focus is changed
         self.brocardi_toplevel.after(1000, lambda: self.brocardi_toplevel.attributes('-topmost', False))  # Revert 'always on top' after 1 second
 
-
-    def create_value_window(self, value):
+# ==============================================================================
+# Value Display Window
+# Description: Creates a new window to display detailed values for a selected brocardi.
+# ==============================================================================
+    def create_value_window(self, value, key):
         # Questa funzione crea una nuova finestra per mostrare il valore
         top = Toplevel(self.root)
-        top.title("Dettagli")
+        top.title("f{key}")
         
         # Assicurati che la finestra appaia al primo livello
         top.attributes('-topmost', True)
@@ -551,10 +747,11 @@ class NormaScraperApp:
 
 
 
-#
-# MENU
-#
-
+# ==============================================================================
+# Menu Configuration
+# Description: Configures the menu bar for the application, including file operations
+# and accessibility options.
+# ==============================================================================
     def create_menu(self):
         self.menu_bar = Menu(self.root)
         self.root.config(menu=self.menu_bar)
@@ -585,9 +782,18 @@ class NormaScraperApp:
         #self.update_menu.add_command(label="Check for Updates", command=self.user_initiated_update)
         #self.menu_bar.add_cascade(label="Update", menu=self.update_menu)
 
+# ==============================================================================
+# Application Configuration Dialog
+# Description: Opens a configuration dialog for application settings.
+# ==============================================================================
     def apri_configurazione(self):
         ConfigurazioneDialog(self.root)
 
+# ==============================================================================
+# Application Control Functions
+# Description: Contains various utility functions to control application behavior 
+# such as restarting, exiting, and adjusting the UI theme and text size.
+# ==============================================================================
     def restart_app(self):
         """Restart the app."""
         python = sys.executable
@@ -598,8 +804,8 @@ class NormaScraperApp:
         self.style.configure('TButton', background='SystemButtonFace', foreground='SystemButtonText')
 
     def on_exit(self):
-        sys_op.close_driver()
-        self.root.destroy()
+        if messagebox.askokcancel("Uscire", "Sei sicuro di voler uscire?"):
+            self.close_driver_safely()
 
 
     def increase_text_size(self):
