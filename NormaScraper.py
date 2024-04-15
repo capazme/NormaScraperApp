@@ -434,7 +434,7 @@ class NormaScraperApp:
         # Display a warning message about the interruption
         if e:
             messagebox.showwarning("Progresso", f"Ricerca interrotta: {e}")
-        else:
+        #else:
             messagebox.showwarning("Progresso", "La ricerca è stata interrotta.")
 
     def toggle_brocardi(self):
