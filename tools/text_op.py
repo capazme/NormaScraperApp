@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import re
 import datetime
+from tkinter import messagebox
 from functools import lru_cache
 from .map import NORMATTIVA, NORMATTIVA_SEARCH, BROCARDI_SEARCH
 
@@ -39,32 +40,30 @@ def parse_date(input_date):
     except ValueError:
         raise ValueError("Formato data non valido")
 
-def normalize_act_type(input_type, search = False, source = 'normattiva'):
+def normalize_act_type(input_type, search=False, source='normattiva'):
     """
     Normalizes the type of legislative act based on a variable input.
     """
-    
+    act_types = {}
     if source == 'normattiva':
-        if search==True:
-                act_types = NORMATTIVA_SEARCH
-        elif search==False:
-            act_types = NORMATTIVA
-    elif source=='brocardi':
-        if search==True:
-            act_types = BROCARDI_SEARCH
-        #elif search==False:
-            
+        act_types = NORMATTIVA_SEARCH if search else NORMATTIVA
+    elif source == 'brocardi':
+        act_types = BROCARDI_SEARCH if search else {}  # Assumiamo esista un dizionario BROCARDI quando search è False
+
     input_type = input_type.lower().strip()
-    # Improved logic to ensure accurate mapping
+
+    # Cerca una corrispondenza nel dizionario
     for key, value in act_types.items():
-        if input_type == key or input_type == key.replace(" ", ""): 
+        if input_type == key or input_type == key.replace(" ", ""):
             return value
-        else:
-            return input_type
-    raise ValueError("Tipo di atto non riconosciuto")
+
+    # Se non troviamo nessuna corrispondenza, restituiamo il tipo di input o generiamo un errore
+    return input_type  # Oppure potresti voler sollevare un'eccezione qui
+    # raise ValueError("Tipo di atto non riconosciuto")
 
 def estrai_data_da_denominazione(denominazione):
     # Pattern per cercare una data nel formato "21 Marzo 2022"
+    #messagebox.showinfo("log", f'{denominazione}')
     pattern = r"\b(\d{1,2})\s([Gg]ennaio|[Ff]ebbraio|[Mm]arzo|[Aa]prile|[Mm]aggio|[Gg]iugno|[Ll]uglio|[Aa]gosto|[Ss]ettembre|[Oo]ttobre|[Nn]ovembre|[Dd]icembre)\s(\d{4})\b"
     
     # Ricerca della data all'interno della stringa utilizzando il pattern
@@ -72,10 +71,11 @@ def estrai_data_da_denominazione(denominazione):
     
     # Se viene trovata una corrispondenza, estrai e ritorna la data
     if match:
+        #messagebox.showinfo("log", f'{match}')
         return match.group(0)  # Ritorna l'intera corrispondenza
     else:
     # Se non viene trovata alcuna corrispondenza, ritorna None o una stringa vuota
-        return None
+        return denominazione
 
 def estrai_numero_da_estensione(estensione):
     estensioni_numeriche = {

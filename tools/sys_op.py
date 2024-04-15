@@ -54,41 +54,30 @@ class NormaVisitata:
     def from_dict(data):
         return NormaVisitata(**data)
     
-driver = None
+drivers = []
 
 def setup_driver():
-    global driver
-    if driver is None:
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920x1080")
-        driver = webdriver.Chrome(options=chrome_options)
-    return driver
+    """
+    Crea un nuovo driver e lo aggiunge alla lista dei driver attivi.
+    """
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920x1080")
+    
+    new_driver = webdriver.Chrome(options=chrome_options)
+    drivers.append(new_driver)
+    return new_driver
 
 def close_driver():
-    global driver
-    if driver:
+    """
+    Chiude tutti i driver aperti e svuota la lista.
+    """
+    global drivers
+    for driver in drivers:
         driver.quit()
-        driver = None
+    drivers = []
 
-@lru_cache(maxsize=MAX_CACHE_SIZE)
-def complete_date(act_type, date, act_number):
-    try:    
-        #driver = setup_driver()
-        driver.get("https://www.normattiva.it/")
-        search_box = driver.find_element(By.CSS_SELECTOR, ".form-control.autocomplete.bg-transparent")  # Assicurati che il selettore sia corretto
-        search_criteria = f"{act_type} {act_number} {date}"
-        search_box.send_keys(search_criteria)
-        WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"button-3\"]"))).click()
-        elemento = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="heading_1"]/p[1]/a')))
-        elemento_text = elemento.text
-        #messagebox.showinfo("Completamento data", f'{elemento_text}')
-        data_completa = estrai_data_da_denominazione(elemento_text)
-        #driver.quit()
-        return data_completa
-    except Exception as e:
-        return f"Errore nel completamento della data, inserisci la data completa: {e}" 
 
                 
 
@@ -118,6 +107,27 @@ def xml_to_html(xml_file_path):
     return ''.join(html_content)
 
 @lru_cache(maxsize=MAX_CACHE_SIZE)
+def complete_date(act_type, date, act_number):
+    #messagebox.showinfo("log", f'{act_type}, {date}, {act_number}')
+    try:    
+        #driver = setup_driver()
+        drivers[0].get("https://www.normattiva.it/")
+        search_box = drivers[0].find_element(By.CSS_SELECTOR, ".form-control.autocomplete.bg-transparent")  # Assicurati che il selettore sia corretto
+        search_criteria = f"{act_type} {act_number} {date}"
+        search_box.send_keys(search_criteria)
+        WebDriverWait(drivers[0], 5).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"button-3\"]"))).click()
+        elemento = WebDriverWait(drivers[0], 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="heading_1"]/p[1]/a')))
+        elemento_text = elemento.text
+        ##messagebox.showinfo("Completamento data", f'{elemento_text}')
+        data_completa = estrai_data_da_denominazione(elemento_text)
+        #messagebox.showinfo("log", f'{data_completa} + log')
+        #driver.quit()
+        return data_completa
+    except Exception as e:
+        #messagebox.showinfo("log", f'{e}')
+        return f"Errore nel completamento della data, inserisci la data completa: {e}" 
+
+@lru_cache(maxsize=MAX_CACHE_SIZE)
 def generate_urn(act_type, date=None, act_number=None, article=None, extension=None, version=None, version_date=None):
     """
     Genera un URL per Normattiva basandosi sui parametri forniti.
@@ -128,18 +138,22 @@ def generate_urn(act_type, date=None, act_number=None, article=None, extension=N
     
     normalized_act_type = normalize_act_type(act_type)
     #messagebox.showinfo("log", normalized_act_type)
-    if act_type in codici_urn:
-        urn = codici_urn[act_type]
+    if normalized_act_type in codici_urn:
+        urn = codici_urn[normalized_act_type]
     else:
         try:
-            if re.match(r"^\d{4}$", date) and act_number and isinstance(date, str):
+            if re.match(r"^\d{4}$", date) and act_number:
                 #messagebox.showinfo("log", "ricerca data completa...")
                 act_type_for_search = normalize_act_type(act_type, search=True)
-                #messagebox.showinfo("log", act_type_for_search)
+                #messagebox.showinfo("log", f'{act_type_for_search}, {date}, {act_number}')
                 full_date = complete_date(act_type=act_type_for_search, date=date, act_number=act_number) 
-                date = full_date
-            formatted_date = parse_date(date)
-        except ValueError as e:
+                #messagebox.showinfo("log", act_type_for_search)
+                formatted_date = parse_date(full_date)
+            else:
+                formatted_date = parse_date(date)
+            print(formatted_date)
+        except Exception as e:
+            #messagebox.showinfo("log", f'{e}')
             print(f"Errore nella formattazione della data: {e}")
             return None
         urn = f"{normalized_act_type}:{formatted_date};{act_number}"

@@ -47,6 +47,8 @@ import ttkbootstrap as ttkb
 from ttkbootstrap.constants import *
 import json
 import tkinter as tk
+from ttkbootstrap.constants import *
+from tkinter import BooleanVar, Tk
 from tkinter import messagebox, filedialog, Menu, simpledialog, Toplevel, StringVar
 from tkinter.filedialog import askdirectory
 import webbrowser
@@ -103,6 +105,7 @@ class NormaScraperApp:
 # Description: Initializes the application, sets up the main window, binds events,
 # and configures the application's initial state and behavior.
 # ==============================================================================
+    
     def __init__(self, root):
         self.root = root
         self.configure_root()
@@ -159,7 +162,9 @@ class NormaScraperApp:
         self.cronologia = []
         self.finestra_cronologia = None
         self.finestra_readme = None
-        self.brocardi = True
+        self.brocardi_but = False
+        self.brocardi_var = BooleanVar(value=self.brocardi_but)
+
 
 # ==============================================================================
 # Event Binding
@@ -206,6 +211,7 @@ class NormaScraperApp:
                     ('focus !disabled', 'green'),
                     ('hover !disabled', 'green')])
 
+
 # ==============================================================================
 # Widget Creation
 # Description: Creates and organizes all widgets in the main application window.
@@ -218,10 +224,9 @@ class NormaScraperApp:
         self.create_output_area()
         self.create_history_buttons()
         self.create_progress_bar()
-        #self.create_brocardi_toggle_button()
+        self.create_brocardi_toggle_button()
         self.brocardi_buttons_frame = ttkb.Frame(self.mainframe)
         self.brocardi_buttons_frame.grid(row=13, column=0, columnspan=4, sticky="nsew", padx=5, pady=5)
-
         self.brocardi_link_button = ttkb.Button(self.mainframe, text="Apri in Brocardi")
         self.brocardi_link_button.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
         self.brocardi_link_button.grid_remove()
@@ -251,6 +256,18 @@ class NormaScraperApp:
 # Input Widgets
 # Description: Creates and configures input widgets for user data entry.
 # ==============================================================================          
+    def create_brocardi_toggle_button(self):
+        # Utilizza lo stile predefinito di ttk.Checkbutton
+        self.brocardi_var = BooleanVar(value=self.brocardi_but)  # Crea la variabile di controllo
+        self.brocardi_toggle_button = ttkb.Checkbutton(
+            self.mainframe, text="Brocardi",
+            variable=self.brocardi_var,  # Associa la variabile di controllo al Checkbutton
+            onvalue=True, offvalue=False,  # Imposta i valori per gli stati selezionato e deselezionato
+            command=self.toggle_brocardi,  # Chiama toggle_brocardi quando il Checkbutton viene cliccato
+            bootstyle='primary'  # Usa lo stile primary per un colore di base
+        )
+        self.brocardi_toggle_button.grid(row=2, column=4, sticky='ew', padx=10, pady=10)
+
     def create_input_widgets(self):
         # Create input fields with labels and tooltips if necessary
         
@@ -334,7 +351,7 @@ class NormaScraperApp:
     def create_output_area(self):
         # Create scrolled text area for output
         self.output_text = ttkb.ScrolledText(self.mainframe, wrap=tk.WORD)
-        self.output_text.grid(row=10, column=0, columnspan=6, rowspan=4, sticky=(tk.N, tk.S, tk.W, tk.E), pady=(10,0))
+        self.output_text.grid(row=9, column=0, columnspan=6, rowspan=4, sticky=(tk.N, tk.S, tk.W, tk.E), pady=(10,0))
 
         operations = [
             ("Salva come XML", self.save_as_xml, 14, 0),
@@ -419,6 +436,18 @@ class NormaScraperApp:
             messagebox.showwarning("Progresso", f"Ricerca interrotta: {e}")
         else:
             messagebox.showwarning("Progresso", "La ricerca è stata interrotta.")
+
+    def toggle_brocardi(self):
+        # Questa funzione verrà chiamata ogni volta che il Checkbutton viene cliccato
+        # Aggiorna il valore della variabile di controllo brocardi_but basato sul valore di brocardi_var
+        self.brocardi_but = self.brocardi_var.get()  # Ottiene il valore corrente della variabile di controllo
+        print(f"Stato dei Brocardi: {'attivato' if self.brocardi_but else 'disattivato'}")
+
+
+
+
+
+
 
 # ==============================================================================
 # Function Definitions
@@ -540,7 +569,7 @@ class NormaScraperApp:
             try:
                 self.fetch_act_data(save_xml_path=file_path)
             except Exception as e:
-                self.break_progress(str(e))
+                self.break_progress(e)
 
 # ==============================================================================
 # History Management
@@ -678,7 +707,10 @@ class NormaScraperApp:
 # Description: Manages the fetching of legal document data from external sources.
 # ==============================================================================
     def fetch_act_data(self, save_xml_path=None):
+        try:
             threading.Thread(target=self._fetch_act_data, args=(save_xml_path,), daemon=True).start()
+        except Exception as e:
+            self.break_progress(e)
 
 # ==============================================================================
 # Private Data Fetching
@@ -712,12 +744,14 @@ class NormaScraperApp:
 # Display Results
 # Description: Displays the fetched data and related actions in the GUI.
 # ==============================================================================
-    def display_results(self, data, url, norma, brocardi=True):
+    def display_results(self, data, url, norma, brocardi = False):
+        self.root.after(50, self.progress_bar.stop)
         self.output_text.delete('1.0', tk.END)
         self.output_text.insert(tk.END, data)
-        self.crea_link("Apri URN Normattiva", url, 9, 1)
+        self.crea_link("Apri URN Normattiva", url, 8, 2)
         self.aggiungi_a_cronologia(norma)
-        self.check_brocardi(norma)
+        if self.brocardi_but == True:
+            self.check_brocardi(norma)
 
 # ==============================================================================
 # Create Hyperlink
@@ -735,7 +769,9 @@ class NormaScraperApp:
     def check_brocardi(self, norma):
         result = self.brocardi.get_info(norma)
         # Assicurarsi che result sia una tupla con due elementi prima di accedere
-        if len(result) >= 2 and isinstance(result, tuple):
+        if result == False:
+            return False
+        elif len(result) >= 2 and isinstance(result, tuple):
             self.output_text.insert(tk.END, result[0])
             if result[2]:  # Se c'è un URL, mostra il bottone per il link
                 self.brocardi_link_button.grid()  # Mostra il pulsante
@@ -819,30 +855,6 @@ class NormaScraperApp:
         # Dopo un certo intervallo, rimuovi il flag 'topmost' per permettere alla finestra di andare in background se necessario
         top.after(5000, lambda: top.attributes('-topmost', False))
 
-    def create_brocardi_toggle_button(self):
-        # Testo e icona del bottone basato sullo stato corrente di self.brocardi
-        button_text = "Brocardi attivo" if self.brocardi else "Brocardi inattivo"
-        #button_icon = self.brocardi_active_icon if self.brocardi else self.brocardi_inactive_icon
-        button_color = 'success' if self.brocardi else 'danger'  # Usa stili predefiniti di successo e pericolo
-        
-        # Crea il bottone e assegna il comando toggle_brocardi per cambiare lo stato
-        self.brocardi_toggle_button = ttkb.Checkbutton(bootstyle=f"{button_color}-square-toggle", master=self.mainframe, compound="left", command=self.toggle_brocardi)
-        self.brocardi_toggle_button.grid(row=17, column=0, sticky='ew', padx=10, pady=10)  # Modifica row e column come necessario
-
-    def toggle_brocardi(self):
-        # Cambia il valore di self.brocardi
-        self.brocardi = not self.brocardi
-        
-        # Aggiorna il testo, l'icona e il colore del bottone per riflettere il nuovo stato
-        #new_text = "Brocardi Attivi" if self.brocardi else "Brocardi Inattivi"
-        new_icon = self.brocardi_active_icon if self.brocardi else self.brocardi_inactive_icon
-        #new_color = 'success' if self.brocardi else 'danger'
-        self.brocardi_toggle_button.config(image=new_icon)
-        
-        # Aggiunta opzionale: Visualizza un messaggio di conferma del cambio di stato
-        messagebox.showinfo("Brocardi Toggle", f"Stato dei Brocardi: {'attivato' if self.brocardi else 'disattivato'}")
-
-
 # ==============================================================================
 # Menu Configuration
 # Description: Configures the menu bar for the application, including file operations
@@ -892,7 +904,7 @@ class NormaScraperApp:
 # ==============================================================================
     def restart_app(self):
         """Restart the app."""
-        self.close_driver_safely(close=True)
+        self.on_exit()
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
@@ -902,6 +914,7 @@ class NormaScraperApp:
 
     def on_exit(self):
         if messagebox.askokcancel("Uscire", "Sei sicuro di voler uscire?"):
+            self.break_progress()
             self.close_driver_safely(close=True)
 
     def increase_text_size(self):
