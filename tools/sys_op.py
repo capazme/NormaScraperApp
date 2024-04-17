@@ -79,8 +79,6 @@ def close_driver():
     drivers = []
 
 
-                
-
 def xml_to_html(xml_file_path):
     with open(xml_file_path, 'r', encoding='utf-8') as file:
         xml_str = file.read()
@@ -229,7 +227,7 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
     if not article:
         #driver = setup_driver()
         try:
-            xml_data = export_xml(driver, urn, timeout, annex)
+            xml_data = export_xml(drivers[0], urn, timeout, annex)
             if save_xml_path:
                 save_xml(xml_data, save_xml_path)
             xml_out = estrai_testo_articolo(xml_data, annesso=annex)
