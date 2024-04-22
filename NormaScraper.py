@@ -750,6 +750,7 @@ class NormaScraperApp:
         self.output_text.insert(tk.END, data)
         self.crea_link("Apri URN Normattiva", url, 8, 2)
         self.aggiungi_a_cronologia(norma)
+        self.create_value_window(sys_op.get_tree(url), 'INDICE')        
         if self.brocardi_but == True:
             self.check_brocardi(norma)
 

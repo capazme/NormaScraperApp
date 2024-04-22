@@ -15,17 +15,19 @@ from .map import NORMATTIVA_URN_CODICI
 MAX_CACHE_SIZE = 1000
 
 class NormaVisitata:
-    def __init__(self, tipo_atto, data=None, numero_atto=None, numero_articolo=None, url=None):
+    def __init__(self, tipo_atto, data=None, numero_atto=None, numero_articolo=None, url=None, tree = None):
         self.tipo_atto_str = normalize_act_type(tipo_atto, search=True)
         self.tipo_atto_urn = normalize_act_type(tipo_atto)
         self.data = data if data else ""
         self.numero_atto = numero_atto if numero_atto else ""
         self.numero_articolo = numero_articolo if numero_articolo else ""
+        
         if not url:
             self.url = self.get_url()
         else:
             self.url = url
-
+        #self.tree, self.num_articoli= get_tree(self.url)
+        
     def __str__(self):
         parts = [self.tipo_atto_str]
 
@@ -210,6 +212,64 @@ def extract_html_article(urn, article, comma):
         html_content = response.text
         return estrai_testo_articolo(atto=html_content, num_articolo=article, comma=comma, tipo='html')
     return None
+
+@lru_cache(maxsize=MAX_CACHE_SIZE)
+def get_tree(normurn, link = False):
+    # Sending HTTP GET request to the provided URL
+    response = requests.get(normurn)
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the HTML content of the page
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Find the div with id 'albero'
+        tree = soup.find('div', id='albero')
+        
+        # Check if the div exists
+        if tree:
+            # Find all ul elements within the div
+            uls = tree.find_all('ul')
+            if uls:
+                result = []
+                count = 0
+                # Process each ul found
+                for ul in uls:
+                    # Extract all li elements within this ul
+                    list_items = ul.find_all('li')
+                    
+                    for li in list_items:
+                        # Extract text and format it properly
+                        text_content = li.get_text(separator=" ", strip=True)
+                        
+                        if link and 'condiv singolo_risultato_collapse' not in li.get('class', []):
+                            # Only process links if 'link' is True and li has no class
+                            if not li.get('class'):
+                                # Construct modified URL
+                                # Use regex to find the article part to replace in the normurn
+                                article_part = re.search(r'art\d+', normurn)
+                                if article_part:
+                                    modified_url = normurn.replace(article_part.group(), 'art' + text_content.split()[0])
+                                else:
+                                    modified_url = normurn  # fallback in case regex fails
+                                
+                                # Create dictionary with text content as key and modified URL as value
+                                item_dict = {text_content: modified_url}
+                                result.append(item_dict)
+                                count += 1
+                            else:
+                                result.append({text_content: None})  # Preserve content of li with classes, no URL modification
+                        else:
+                            # If link is False, append only text content
+                            result.append(text_content)
+                
+                return result, count
+            else:
+                return "No 'ul' element found within the 'albero' div"
+        else:
+            return "Div with id 'albero' not found"
+    else:
+        return f"Failed to retrieve the page, status code: {response.status_code}"
 
 @lru_cache(maxsize=MAX_CACHE_SIZE)
 def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
