@@ -50,8 +50,11 @@ def normalize_act_type(input_type, search=False, source='normattiva'):
     elif source == 'brocardi':
         act_types = BROCARDI_SEARCH if search else {}  # Assumiamo esista un dizionario BROCARDI quando search è False
 
-    input_type = input_type.lower().strip()
-
+    if input_type == "TUE" or input_type == "TFUE" or input_type == "CDFUE":
+        return input_type
+    else: 
+        input_type = input_type.lower().strip()
+   
     # Cerca una corrispondenza nel dizionario
     for key, value in act_types.items():
         if input_type == key or input_type == key.replace(" ", ""):

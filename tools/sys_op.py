@@ -10,7 +10,7 @@ from selenium.webdriver.chrome.options import Options
 import requests
 from .text_op import estrai_testo_articolo, parse_date, normalize_act_type, estrai_data_da_denominazione, get_annex_from_urn
 from functools import lru_cache
-from .map import NORMATTIVA_URN_CODICI
+from .map import NORMATTIVA_URN_CODICI, EURLEX
 
 MAX_CACHE_SIZE = 1000
 
@@ -214,6 +214,46 @@ def extract_html_article(urn, article, comma):
     return None
 
 @lru_cache(maxsize=MAX_CACHE_SIZE)
+def get_eurlex(act_type='TUE', article=None):
+    if act_type not in EURLEX:
+        raise ValueError("Elemento eurlex non trovato")
+
+    url = EURLEX[act_type]
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise ConnectionError("Problema nel download")
+
+    html_content = response.text
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    if not soup:
+        raise ValueError("Documento non trovato o malformattato")
+
+    if article:
+        # Searching for the article title
+        search_query = f"Articolo {article}"
+        article_section = soup.find(lambda tag: tag.name == 'p' and 'ti-art' in tag.get('class', []) and tag.get_text(strip=True).startswith(search_query))
+        
+        if not article_section:
+            raise ValueError("Articolo non trovato")
+        
+        # Collecting all subsequent contents until the next article title
+        full_text = [article_section.get_text(strip=True)]  # Include the title in the output
+        element = article_section.find_next_sibling()
+        while element:
+            if element.name == 'p' and 'ti-art' in element.get('class', []):
+                break  # Stop if another article title is found
+            if element.name == 'p' or element.name == 'div':
+                full_text.append(element.get_text(strip=True))
+            element = element.find_next_sibling()
+        
+        return "\n".join(full_text)  # Join paragraphs with newline
+    else:
+        return soup.text
+            
+            
+
+@lru_cache(maxsize=MAX_CACHE_SIZE)
 def get_tree(normurn, link = False):
     # Sending HTTP GET request to the provided URL
     response = requests.get(normurn)
@@ -275,7 +315,10 @@ def get_tree(normurn, link = False):
 def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
     
     #normalized_act_type = normalize_act_type(act_type)
-    
+
+    if act_type in EURLEX:
+        return get_eurlex(act_type, article), EURLEX[act_type], NormaVisitata(tipo_atto=act_type, numero_articolo=article, url=EURLEX[act_type])
+        
     urn, norma = generate_urn(act_type=act_type, date=date, act_number=act_number, article=article, extension=extension, version=version,version_date=version_date)
     if urn is None:
         print("Errore nella generazione dell'URN.")

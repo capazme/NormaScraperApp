@@ -275,7 +275,7 @@ class NormaScraperApp:
         act_type_label.grid(row=0, column=0, sticky=tk.W, padx=2, pady=2)
 
         act_types = [
-            'legge', 'decreto legge', 'decreto legislativo', 'costituzione', 'd.p.r.', 'regio decreto',
+            'legge', 'decreto legge', 'decreto legislativo', 'costituzione', 'd.p.r.', 'TUE', 'TFUE', 'CDFUE','regio decreto',
             'codice civile', 'preleggi', 'codice penale', 'codice di procedura civile',
             'codice di procedura penale', 'codice della navigazione',
             'codice postale e delle telecomunicazioni', 'codice della strada',
@@ -748,7 +748,7 @@ class NormaScraperApp:
         self.root.after(50, self.progress_bar.stop)
         self.output_text.delete('1.0', tk.END)
         self.output_text.insert(tk.END, data)
-        self.crea_link("Apri URN Normattiva", url, 8, 2)
+        self.crea_link("Apri URL", url, 8, 2)
         self.aggiungi_a_cronologia(norma)
         if self.brocardi_but == True:
             self.check_brocardi(norma)
