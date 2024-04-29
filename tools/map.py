@@ -260,11 +260,11 @@ NORMATTIVA_SEARCH = {
 
 NORMATTIVA = {
         "d.lgs.": "decreto.legislativo",
-        "dpr": "decreto.del.presidente.della.repubblica",
+        "dpr": "presidente.repubblica:decreto",
         "rd":"regio.decreto",
         "r.d.": "regio.decreto",
         "regio decreto": "regio.decreto",
-        "d.p.r.": "decreto.del.presidente.della.repubblica",
+        "d.p.r.": "presidente.repubblica:decreto",
         "decreto legge": "decreto.legge",
         "decreto legislativo": "decreto.legislativo",
         "decreto.legge": "decreto.legge",

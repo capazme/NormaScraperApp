@@ -135,7 +135,7 @@ def estrai_da_xml(atto, num_articolo, est_articolo, comma, annesso):
 
             corpo = articolo.find('corpo')
             # Handling 'comma' extraction
-            if comma is not None or comma is not "":
+            if comma != None or comma != "":
                 comma_elements = corpo.find_all('h:p')  # Assuming 'h:p' is the correct tag for 'comma'
                 commi_text = []
                 for p in comma_elements:

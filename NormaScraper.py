@@ -275,7 +275,7 @@ class NormaScraperApp:
         act_type_label.grid(row=0, column=0, sticky=tk.W, padx=2, pady=2)
 
         act_types = [
-            'legge', 'decreto legge', 'decreto legislativo', 'costituzione',
+            'legge', 'decreto legge', 'decreto legislativo', 'costituzione', 'd.p.r.', 'regio decreto',
             'codice civile', 'preleggi', 'codice penale', 'codice di procedura civile',
             'codice di procedura penale', 'codice della navigazione',
             'codice postale e delle telecomunicazioni', 'codice della strada',
