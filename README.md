@@ -19,11 +19,11 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![CC0-1.0 License][license-shield]][license-url]
+[Contributors][contributors-url]
+[Forks][forks-url]
+[Stargazers][stars-url]
+[Issues][issues-url]
+[CC0-1.0 License][license-url]
 
 <!-- PROJECT LOGO -->
 
@@ -86,7 +86,7 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
 ```markdown
   NormaScraperApp
   ├── LICENSE.txt
-  ├── NormaScraper-Betav0.7.1.zip
+  ├── NormaScraper-BetavX.X.X.zip
   ├── NormaScraper.py
   ├── BrocardiScraper.py
   ├── README.md
@@ -144,15 +144,15 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
    ```
 2. Installa le librerie pytho necessarie
 
-  ```shell
+```shell
      pip install -r resources/requirements.txt
-  ```
+```
 
 3. Avvia NormaScraper.py con python 3.12 o superiore
 
-  ```sh
+```sh
   python -m NormaScraper.py
-  ```
+```
 
 3B. Oppure utilizza il file build.sh per ottenere un file eseguibile
    Questo script accetta vari flag che influenzano la versione e il comportamento della build:
@@ -164,38 +164,38 @@ NormaScraperApp è un'applicazione Python che fornisce un'interfaccia utente per
    --cleanhard: Pulisce i file generati dalle compilazioni precedenti e rimuove le versioni precedenti dell'app.
    Per eseguire una compilazione standard che incrementa automaticamente la versione patch di 0.0.1, usa il seguente comando:
 
-  ```bash
+```bash
   ./build.sh
-  ```
+```
 
 Se desideri mantenere la stessa versione e solo ricompilare l'app, puoi usare:
 
-  ```bash
+```bash
   ./build.sh --noup
-  ```
+```
 
 #### Incremento della Versione
 
 Per specificare manualmente il tipo di incremento della versione:
 
-  ```bash
+```bash
   ./build.sh --up    # Incrementa la versione minore
   ./build.sh --upup  # Incrementa la versione maggiore
-  ```
+```
 
 #### Pulizia
 
 Per pulire la directory di build senza rimuovere le versioni precedenti:
 
-  ```bash
+```bash
   ./build.sh --clean
-  ```
+```
 
 Per una pulizia completa che include la rimozione delle versioni vecchie:
 
-  ```bash
+```bash
   ./build.sh --cleanhard
-  ```
+```
 
 L'app compilata verrà spostata nella directory principale del progetto, e tutti i file temporanei saranno eliminati dopo la compilazione."
 
@@ -219,10 +219,13 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
 
 * act_type (str): Il tipo di atto legislativo per cui si desidera generare l'URN.
 
-  * **atto generico** (legge, decreto-legge, decreto legislativo e possibili abbreviazioni)
+  * **atto generico** (legge, decreto-legge, decreto legislativo, d.p.r. e possibili abbreviazioni)
   * **atto specifico** tra quelli elencati (o una abbraviazione elencata):
     * Costituzione (costituzione, cost, cost., c.)
     * Codice Civile (cc, c.c., codice civile, cod. civ., disp. att. c.c.)
+    * TUE
+    * TFUE
+    * CDFUE
     * Preleggi (disp. prel., preleggi, prel.)
     * Codice Penale (cp, c.p., cod. pen.)
     * Codice di Procedura Civile (cpc, c.p.c., cod. proc. civ., disp. att. c.p.c.)
@@ -250,8 +253,8 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
     * Codice del Terzo Settore (cts, cod. ter. sett.)
     * Codice della Protezione Civile (cdpc, cod. prot. civ.)
     * Codice della Crisi d'Impresa e dell'Insolvenza (cci, cod. crisi imp.)"
-    * date (str, optional): La data di pubblicazione dell'atto in formato YYYY-MM-DD.
 * **act_number** (str, optional): Il numero dell'atto legislativo e la sua espansione (come "-bis" o "-ter")
+* **date** (str, optional): La data di pubblicazione dell'atto in formato YYYY-MM-DD.
 * **version** (str, optional): Indica se l'atto è nella versione "originale" o "vigente".
 * **version_date** (str, optional): La data della versione dell'atto in formato YYYY-MM-DD.
 
@@ -261,12 +264,14 @@ La funzione get_urn_and_extract_data è progettata per interrogare il sito Norma
 
 ## Roadmap
 
-- [ ] Brocardi implementation
+- [X] Brocardi implementation
   - [ ] Aggiunta link articoli rilevanti
-  - [ ] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
+  - [X] Aggiunta tasto spiegazione e massime (per i codici supportati da brocardi)
 - [ ] Altalex implementation
   - [ ] Altalexpedia
-- [ ]
+- [ ] EURLEX implementation
+  - [X] Trattati principali
+  - [ ] Regolamenti e direttive
 
 See the [open issues](https://github.com/capazme/NormaScraperApp/issues) for a full list of proposed features (and known issues).
 
