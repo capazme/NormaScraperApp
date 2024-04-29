@@ -213,12 +213,22 @@ def extract_html_article(urn, article, comma):
         return estrai_testo_articolo(atto=html_content, num_articolo=article, comma=comma, tipo='html')
     return None
 
+def get_eur_uri(act_type, year, num):
+    base = 'https://eur-lex.europa.eu/eli'
+    out = f'{base}/{act_type}/{year}/{num}/oj/ita'
+    return out
+    
 @lru_cache(maxsize=MAX_CACHE_SIZE)
-def get_eurlex(act_type='TUE', article=None):
+def get_eurlex(act_type='TUE', article=None, year=None, num=None):
     if act_type not in EURLEX:
         raise ValueError("Elemento eurlex non trovato")
 
-    url = EURLEX[act_type]
+    norma = EURLEX[act_type]
+    if 'http' not in norma:
+        url = get_eur_uri(act_type=norma, year=year, num=num)
+    else:
+        url = norma
+        
     response = requests.get(url)
     if response.status_code != 200:
         raise ConnectionError("Problema nel download")
@@ -230,14 +240,12 @@ def get_eurlex(act_type='TUE', article=None):
         raise ValueError("Documento non trovato o malformattato")
 
     if article:
-        # Searching for the article title
         search_query = f"Articolo {article}"
         article_section = soup.find(lambda tag: tag.name == 'p' and 'ti-art' in tag.get('class', []) and tag.get_text(strip=True).startswith(search_query))
         
         if not article_section:
             raise ValueError("Articolo non trovato")
         
-        # Collecting all subsequent contents until the next article title
         full_text = [article_section.get_text(strip=True)]  # Include the title in the output
         element = article_section.find_next_sibling()
         while element:
@@ -245,11 +253,18 @@ def get_eurlex(act_type='TUE', article=None):
                 break  # Stop if another article title is found
             if element.name == 'p' or element.name == 'div':
                 full_text.append(element.get_text(strip=True))
+            elif element.name == 'table':
+                # Process each row in the table
+                rows = element.find_all('tr')
+                for row in rows:
+                    cells = row.find_all('td')
+                    row_text = ' '.join(cell.get_text(strip=True) for cell in cells)
+                    full_text.append(row_text)
             element = element.find_next_sibling()
         
-        return "\n".join(full_text)  # Join paragraphs with newline
+        return "\n".join(full_text), url  # Join paragraphs with newline
     else:
-        return soup.text
+        return soup.text, url
             
             
 
@@ -317,7 +332,8 @@ def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None,
     #normalized_act_type = normalize_act_type(act_type)
 
     if act_type in EURLEX:
-        return get_eurlex(act_type, article), EURLEX[act_type], NormaVisitata(tipo_atto=act_type, numero_articolo=article, url=EURLEX[act_type])
+        text, url = get_eurlex(act_type=act_type, article=article, year=date, num=act_number)
+        return text, url, NormaVisitata(tipo_atto=act_type, numero_articolo=article, url=url, numero_atto=act_number, data=date)
         
     urn, norma = generate_urn(act_type=act_type, date=date, act_number=act_number, article=article, extension=extension, version=version,version_date=version_date)
     if urn is None:

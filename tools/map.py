@@ -15075,4 +15075,6 @@ EURLEX = {
     'TUE': 'https://eur-lex.europa.eu/legal-content/IT/TXT/HTML/?uri=CELEX:12016M/TXT',
     'TFUE': 'https://eur-lex.europa.eu/legal-content/IT/TXT/HTML/?uri=CELEX:12016E/TXT',
     'CDFUE': 'https://eur-lex.europa.eu/legal-content/IT/TXT/HTML/?uri=CELEX:12016P/TXT',
+    'Regolamento UE': 'reg',
+    'Direttiva UE': 'dir',
 }
