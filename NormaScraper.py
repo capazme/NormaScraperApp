@@ -48,6 +48,8 @@ from ttkbootstrap.constants import *
 import json
 import tkinter as tk
 from ttkbootstrap.constants import *
+import requests
+from functools import lru_cache
 from tkinter import BooleanVar, Tk
 from tkinter import messagebox, filedialog, Menu, simpledialog, Toplevel, StringVar
 from tkinter.filedialog import askdirectory
@@ -58,6 +60,7 @@ from tools.config import ConfigurazioneDialog
 import threading
 from BrocardiScraper import BrocardiScraper
 
+MAX_CACHE_SIZE = sys_op.MAX_CACHE_SIZE
 # ==============================================================================
 # Class Definitions
 # Description: Contains all class definitions including Tooltip for widget 
@@ -298,7 +301,8 @@ class NormaScraperApp:
         self.act_number_entry = self.create_labeled_entry("Numero atto:", "Inserisci il numero dell'atto (obbligatorio se il tipo di atto è generico)", 2)
 
         self.article_entry = self.create_labeled_entry("Articolo:", "Inserisci l'articolo con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 3, increment=True)
-         # Bottoni per incrementare e decrementare il valore
+        
+        # Bottoni per incrementare e decrementare il valore
         self.comma_entry = self.create_labeled_entry("Comma:", "Inserisci il comma con estensione (-bis, -tris etc..), oppure aggiungi l'estensione premendo il pulsante", 4)
 
         self.version_date_entry = self.create_labeled_entry("Data versione atto (se non originale):", "Inserisci la data di versione dell'atto desiderata (default alla data corrente)", 6)
@@ -402,9 +406,10 @@ class NormaScraperApp:
             # Reduce the padx to bring the frame closer to the Entry
             inc_dec_frame.grid(row=row, column=3, sticky=tk.W, padx=(0, 5))
 
-            # Buttons for incrementing and decrementing the value
+            # Buttons for incrementing and decrementing the valu
             inc_button = ttkb.Button(inc_dec_frame, text="▲", bootstyle="outline", command=lambda: self.increment_entry(entry))
             dec_button = ttkb.Button(inc_dec_frame, text="▼", bootstyle="outline", command=lambda: self.decrement_entry(entry))
+            
             # No padding needed as they are inside the frame which is already positioned
             inc_button.pack(side=tk.LEFT)
             dec_button.pack(side=tk.LEFT)
@@ -444,11 +449,6 @@ class NormaScraperApp:
         print(f"Stato dei Brocardi: {'attivato' if self.brocardi_but else 'disattivato'}")
 
 
-
-
-
-
-
 # ==============================================================================
 # Function Definitions
 # Description: Contains all key functional operations that handle data manipulation, 
@@ -466,18 +466,39 @@ class NormaScraperApp:
 # ==============================================================================
 # Increment Entry
 # Description: Increases the numeric value in an entry field.
-# ==============================================================================
+# ============================================================================== 
     def increment_entry(self, entry):
         current_value = entry.get()
-        try:
-            new_value = int(current_value) + 1 if current_value.isdigit() else 1
-            entry.delete(0, tk.END)
-            entry.insert(0, str(new_value))
-        except ValueError:
-            # Se il valore corrente non è un numero, imposta a 1
-            entry.delete(0, tk.END)
-            entry.insert(0, '1')
-
+        normavisitata = self.cronologia[-1].to_dict() if len(self.cronologia) > 0 else None
+        if normavisitata:
+            try:
+                normavisitata_url = normavisitata['url']
+                normavisitata_tree = self.check_tree(normavisitata_url)[0]
+                index = normavisitata_tree.index(current_value)
+                if index < len(normavisitata_tree) - 1:
+                    new_value = normavisitata_tree[index + 1]
+                else:
+                    new_value = normavisitata_tree[0]
+                entry.delete(0, tk.END)
+                entry.insert(0, str(new_value))
+            except ValueError:
+                # Se il valore corrente non è nella lista, imposta a 1
+                if normavisitata_tree:
+                    entry.delete(0, tk.END)
+                    entry.insert(0, str(normavisitata_tree[0]))
+                else:
+                    entry.delete(0, tk.END)
+                    entry.insert(0, '1')
+        else:
+            try:
+                new_value = int(current_value) + 1 if current_value.isdigit() else 1
+                entry.delete(0, tk.END)
+                entry.insert(0, str(new_value))
+            except ValueError:
+                # Se il valore corrente non è un numero, imposta a 1
+                entry.delete(0, tk.END)
+                entry.insert(0, '1')
+                
         # Chiamare fetch_act_data solo se il Combobox ha un valore valido e non è il default
         if self.act_type_combobox.get() != "Select":
             try:
@@ -491,22 +512,43 @@ class NormaScraperApp:
 # ==============================================================================
     def decrement_entry(self, entry):
         current_value = entry.get()
-        try:
-            new_value = max(1, int(current_value) - 1) if current_value.isdigit() else 1
-            entry.delete(0, tk.END)
-            entry.insert(0, str(new_value))
-        except ValueError:
-            # Se il valore corrente non è un numero, imposta a 1
-            entry.delete(0, tk.END)
-            entry.insert(0, '1')
-
+        normavisitata = self.cronologia[-1].to_dict()
+        if normavisitata:
+            try:
+                normavisitata_url = normavisitata['url']
+                normavisitata_tree = self.check_tree(normavisitata_url)[0]
+                index = normavisitata_tree.index(current_value)
+                if index > 0:
+                    new_value = normavisitata_tree[index - 1]
+                else:
+                    new_value = normavisitata_tree[-1]
+                entry.delete(0, tk.END)
+                entry.insert(0, str(new_value))
+            except ValueError:
+                # Se il valore corrente non è nella lista, imposta a 1
+                if normavisitata_tree:
+                    entry.delete(0, tk.END)
+                    entry.insert(0, str(normavisitata_tree[0]))
+                else:
+                    entry.delete(0, tk.END)
+                    entry.insert(0, '1')
+        else:
+            try:
+                new_value = int(current_value) - 1 if current_value.isdigit() and int(current_value) > 1 else 1
+                entry.delete(0, tk.END)
+                entry.insert(0, str(new_value))
+            except ValueError:
+                # Se il valore corrente non è un numero, imposta a 1
+                entry.delete(0, tk.END)
+                entry.insert(0, '1')
+        
         # Chiamare fetch_act_data solo se il Combobox ha un valore valido e non è il default
         if self.act_type_combobox.get() != "Select":
             try:
                 self.fetch_act_data()
             except Exception as e:
                 self.break_progress(e)
-
+            
 # ==============================================================================
 # Toggle Extension Frame
 # Description: Shows or hides additional UI components dynamically.
@@ -553,7 +595,8 @@ class NormaScraperApp:
         if comboboxes is not None:
             for combobox in comboboxes:
                 combobox.set(combobox_default_value)
-
+        self.output_text.delete('1.0', tk.END)
+        
 # ==============================================================================
 # XML Saving Functionality
 # Description: Handles saving of data in XML format based on user input.
@@ -750,9 +793,10 @@ class NormaScraperApp:
         self.output_text.insert(tk.END, data)
         self.crea_link("Apri URL", url, 8, 2)
         self.aggiungi_a_cronologia(norma)
+        #self.check_tree(url=url)
         if self.brocardi_but == True:
             self.check_brocardi(norma)
-
+        
 # ==============================================================================
 # Create Hyperlink
 # Description: Creates a clickable hyperlink in the output area.
@@ -761,6 +805,23 @@ class NormaScraperApp:
         link = tk.Label(self.mainframe, text=text, fg="blue", cursor="hand2")
         link.bind("<Button-1>", lambda e: self.apri_url(url))
         link.grid(row=row, column=column)
+    
+    @lru_cache(maxsize=MAX_CACHE_SIZE)    
+    def check_tree(self, url, skeleton = False):
+            tree = sys_op.get_tree(url)[0]
+            tree = [elemento.replace("art.", "").strip() for elemento in tree]
+            
+            sequenza_articoli_ghst = [stringa if any(carattere.isdigit() for carattere in stringa) and '§' not in stringa else '' for stringa in tree]
+            sequenza_titoli_ghts = [stringa if any(carattere.isupper() for carattere in stringa) else '' for stringa in tree]
+            sequenza_articoli = list(filter(None, sequenza_articoli_ghst))
+            sequenza_articoli = [stringa.replace(' ', '-') for stringa in sequenza_articoli]
+            sequenza_titoli = list(filter(None, sequenza_titoli_ghts))
+            
+            if skeleton == False:
+                #print(sequenza_articoli, sequenza_titoli)
+                return sequenza_articoli, sequenza_titoli
+            else:
+                return sequenza_articoli_ghst, sequenza_titoli_ghts
 
 # ==============================================================================
 # Brocardi Information Handling
@@ -827,8 +888,10 @@ class NormaScraperApp:
 # Value Display Window
 # Description: Creates a new window to display detailed values for a selected brocardi.
 # ==============================================================================
-    def create_value_window(self, value, key):
+    def create_value_window(self, value, key = None):
         # Questa funzione crea una nuova finestra per mostrare il valore
+        if not key:
+            key = '//'
         top = Toplevel(self.root)
         top.title(f"{key}")
         

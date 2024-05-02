@@ -265,8 +265,6 @@ def get_eurlex(act_type='TUE', article=None, year=None, num=None):
         return "\n".join(full_text), url  # Join paragraphs with newline
     else:
         return soup.text, url
-            
-            
 
 @lru_cache(maxsize=MAX_CACHE_SIZE)
 def get_tree(normurn, link = False):
@@ -313,10 +311,12 @@ def get_tree(normurn, link = False):
                                 result.append(item_dict)
                                 count += 1
                             else:
-                                result.append({text_content: None})  # Preserve content of li with classes, no URL modification
+                                result.append(text_content)  # Preserve content of li with classes, no URL modification
+                                
                         else:
                             # If link is False, append only text content
                             result.append(text_content)
+                            count += 1
                 
                 return result, count
             else:
@@ -325,6 +325,7 @@ def get_tree(normurn, link = False):
             return "Div with id 'albero' not found"
     else:
         return f"Failed to retrieve the page, status code: {response.status_code}"
+
 
 @lru_cache(maxsize=MAX_CACHE_SIZE)
 def get_urn_and_extract_data(act_type, date=None, act_number=None, article=None, extension=None, comma=None, version=None, version_date=None, timeout=10, save_xml_path=None):
